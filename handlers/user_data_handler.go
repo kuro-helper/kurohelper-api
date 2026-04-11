@@ -4,14 +4,15 @@ import (
 	"log/slog"
 
 	"github.com/gofiber/fiber/v3"
-	kurohelperdb "github.com/peter910820/kurohelper-db/v2"
+
+	kurohelperdb "kurohelperservice/db"
 )
 
 func GetUserHasPlayedHandler(c fiber.Ctx) error {
 	// URL decoding
 	id := c.Query("id")
 
-	userHasPlayed, err := kurohelperdb.SelectUserHasPlayed(id)
+	userHasPlayed, err := kurohelperdb.GetUserHasPlayedByID(kurohelperdb.Dbs, id)
 	if err != nil {
 		slog.Error("SelectUserHasPlayed", "err", err, "id", id)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{

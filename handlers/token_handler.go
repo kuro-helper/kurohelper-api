@@ -6,7 +6,8 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
-	kurohelperdb "github.com/peter910820/kurohelper-db/v2"
+
+	kurohelperdb "kurohelperservice/db"
 )
 
 // internal environment tokens generate handler
@@ -14,7 +15,7 @@ func TokensGenerateHandler(c fiber.Ctx) error {
 	id := uuid.New()
 
 	// 寫到db(目前過期時間預設都是無限，因為只有內部使用)
-	err := kurohelperdb.CreateWebAPIToken(id.String(), 0)
+	err := kurohelperdb.CreateWebAPIToken(kurohelperdb.Dbs, id.String(), 0)
 	if err != nil {
 		slog.Error("CreateWebAPIToken", "err", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{

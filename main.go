@@ -16,7 +16,7 @@ import (
 	"github.com/lmittmann/tint"
 	slogmulti "github.com/samber/slog-multi"
 
-	kurohelperdb "github.com/peter910820/kurohelper-db/v2"
+	kurohelperdb "kurohelperservice/db"
 )
 
 func init() {
@@ -97,7 +97,7 @@ func main() {
 	// site route group
 	// routes.TokenRouter(apiGroup)
 	routes.UserDataRouter(apiGroup)
-	routes.SearchRouter(apiGroup)
+	// routes.SearchRouter(apiGroup)
 
 	addr := fmt.Sprintf("127.0.0.1:%s", os.Getenv("PRODUCTION_PORT"))
 	if err := app.Listen(addr); err != nil {
@@ -122,7 +122,7 @@ func parseAllowOrigins(raw string) []string {
 }
 
 func initTokenCache() {
-	webAPIToken, err := kurohelperdb.GetWebAPIToken()
+	webAPIToken, err := kurohelperdb.GetWebAPIToken(kurohelperdb.Dbs)
 	if err != nil {
 		slog.Error("init token cache", "err", err)
 		os.Exit(1)
