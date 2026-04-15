@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"kurohelper-api/middlware"
-	"kurohelper-api/routes"
+	"kurohelper-api/router"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -96,10 +96,12 @@ func main() {
 
 	// site route group
 	// routes.TokenRouter(apiGroup)
-	routes.UserDataRouter(apiGroup)
+	router.UserDataRouter(apiGroup)
+	router.UserRouter(apiGroup)
 	// routes.SearchRouter(apiGroup)
 
 	addr := fmt.Sprintf("127.0.0.1:%s", os.Getenv("PRODUCTION_PORT"))
+	slog.Info("fiber open...")
 	if err := app.Listen(addr); err != nil {
 		slog.Error("fiber listen", "addr", addr, "err", err)
 		os.Exit(1)
