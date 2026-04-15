@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"kurohelper-api/dto"
 	"kurohelper-api/middlware"
 	"log/slog"
 
@@ -18,16 +19,18 @@ func TokensGenerateHandler(c fiber.Ctx) error {
 	err := kurohelperdb.CreateWebAPIToken(kurohelperdb.Dbs, id.String(), 0)
 	if err != nil {
 		slog.Error("CreateWebAPIToken", "err", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": err,
+		return c.Status(fiber.StatusInternalServerError).JSON(dto.TResponse[any]{
+			Message: err.Error(),
+			Data:    nil,
 		})
 	}
 
 	// 寫到快取
 	middlware.VaildToken[id.String()] = struct{}{}
 
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"message": "token generated successfully",
-		"token":   id.String(),
+	slog.Info("TokensGenerateHandler success", "token", id.String())
+	return c.Status(fiber.StatusOK).JSON(dto.TResponse[string]{
+		Message: "token generated successfully",
+		Data:    id.String(),
 	})
 }

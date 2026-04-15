@@ -96,7 +96,7 @@ func main() {
 
 	// site route group
 	// routes.TokenRouter(apiGroup)
-	router.UserDataRouter(apiGroup)
+	router.UserLegacyRouter(apiGroup)
 	router.UserRouter(apiGroup)
 	// routes.SearchRouter(apiGroup)
 
