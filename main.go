@@ -97,9 +97,11 @@ func main() {
 	// site route group
 	// routes.TokenRouter(apiGroup)
 	routes.UserDataRouter(apiGroup)
+	routes.UserRouter(apiGroup)
 	// routes.SearchRouter(apiGroup)
 
 	addr := fmt.Sprintf("127.0.0.1:%s", os.Getenv("PRODUCTION_PORT"))
+	slog.Info("fiber open...")
 	if err := app.Listen(addr); err != nil {
 		slog.Error("fiber listen", "addr", addr, "err", err)
 		os.Exit(1)

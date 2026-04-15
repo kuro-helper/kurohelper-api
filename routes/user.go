@@ -7,11 +7,11 @@ import (
 	"github.com/gofiber/fiber/v3"
 )
 
-func UserDataRouter(apiGroup fiber.Router) {
-	userDataGroup := apiGroup.Group("/userdata")
+func UserRouter(apiGroup fiber.Router) {
+	userDataGroup := apiGroup.Group("/user")
 
-	// 獲取指定使用者全部的遊玩資料
+	// 獲取所有存在的User
 	userDataGroup.Get("/", middlware.TokenAuth(), func(c fiber.Ctx) error {
-		return handler.GetUserHasPlayedHandler(c)
+		return handler.GetUser(c)
 	})
 }
