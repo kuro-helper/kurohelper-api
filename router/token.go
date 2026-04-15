@@ -1,4 +1,4 @@
-package routes
+package router
 
 // func TokenRouter(apiGroup fiber.Router) {
 // 	tokenGroup := apiGroup.Group("/tokens")

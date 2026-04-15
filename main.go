@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"kurohelper-api/middlware"
-	"kurohelper-api/routes"
+	"kurohelper-api/router"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -96,8 +96,8 @@ func main() {
 
 	// site route group
 	// routes.TokenRouter(apiGroup)
-	routes.UserDataRouter(apiGroup)
-	routes.UserRouter(apiGroup)
+	router.UserDataRouter(apiGroup)
+	router.UserRouter(apiGroup)
 	// routes.SearchRouter(apiGroup)
 
 	addr := fmt.Sprintf("127.0.0.1:%s", os.Getenv("PRODUCTION_PORT"))
