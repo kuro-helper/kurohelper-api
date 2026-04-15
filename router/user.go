@@ -7,11 +7,32 @@ import (
 	"github.com/gofiber/fiber/v3"
 )
 
+// 新版API
 func UserRouter(apiGroup fiber.Router) {
 	userDataGroup := apiGroup.Group("/user")
 
 	// 獲取所有存在的User
 	userDataGroup.Get("/", middlware.TokenAuth(), func(c fiber.Ctx) error {
 		return handler.GetUser(c)
+	})
+
+	// 獲取指定使用者全部的遊玩資料
+	userDataGroup.Get("/played", middlware.TokenAuth(), func(c fiber.Ctx) error {
+		return handler.GetUserHasPlayedHandler(c)
+	})
+
+	// 獲取指定使用者全部的願望清單資料
+	userDataGroup.Get("/wish", middlware.TokenAuth(), func(c fiber.Ctx) error {
+		return handler.GetUserInWishHandler(c)
+	})
+}
+
+// 舊版API
+func UserLegacyRouter(apiGroup fiber.Router) {
+	userDataGroup := apiGroup.Group("/userdata")
+
+	// 獲取指定使用者全部的遊玩資料
+	userDataGroup.Get("/", middlware.TokenAuth(), func(c fiber.Ctx) error {
+		return handler.GetUserHasPlayedLegacyHandler(c)
 	})
 }
