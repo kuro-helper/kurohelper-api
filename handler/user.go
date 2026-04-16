@@ -1,18 +1,38 @@
 package handler
 
 import (
+	"errors"
 	"kurohelper-api/dto"
 	"log/slog"
+	"strings"
 
 	"github.com/gofiber/fiber/v3"
+	"gorm.io/gorm"
 
 	"kurohelperservice/db"
 )
 
 func GetUser(c fiber.Ctx) error {
-	user, err := db.GetAllUsers(db.Dbs)
+	// URL decoding
+	id := c.Query("id")
+
+	getData := func() ([]db.User, error) {
+		if strings.TrimSpace(id) != "" {
+			u, err := db.GetUser(db.Dbs, id)
+			return []db.User{u}, err
+		}
+		return db.GetAllUsers(db.Dbs)
+	}
+
+	users, err := getData()
 	if err != nil {
-		slog.Error("GetUser", "err", err)
+		slog.Error("GetUser", "err", err, "id", id)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return c.Status(fiber.StatusNotFound).JSON(dto.TResponse[any]{
+				Message: "找不到該使用者",
+				Data:    nil,
+			})
+		}
 		return c.Status(fiber.StatusInternalServerError).JSON(dto.TResponse[any]{
 			Message: "發生錯誤，請稍後再試",
 			Data:    nil,
@@ -20,7 +40,7 @@ func GetUser(c fiber.Ctx) error {
 	}
 
 	var userReturn []dto.User
-	for _, u := range user {
+	for _, u := range users {
 		userReturn = append(userReturn, dto.User{
 			ID:        u.ID,
 			Name:      u.Name,
