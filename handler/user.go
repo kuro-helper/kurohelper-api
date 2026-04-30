@@ -18,7 +18,7 @@ func GetUser(c fiber.Ctx) error {
 
 	getData := func() ([]db.User, error) {
 		if strings.TrimSpace(id) != "" {
-			u, err := db.GetUser(db.Dbs, id)
+			u, err := db.GetUserByDiscordID(db.Dbs, id)
 			return []db.User{u}, err
 		}
 		return db.GetAllUsers(db.Dbs)
@@ -42,7 +42,7 @@ func GetUser(c fiber.Ctx) error {
 	var userReturn []dto.User
 	for _, u := range users {
 		userReturn = append(userReturn, dto.User{
-			ID:        u.ID,
+			ID:        u.DiscordID,
 			Name:      u.Name,
 			CreatedAt: u.CreatedAt,
 			UpdatedAt: u.UpdatedAt,
@@ -60,7 +60,7 @@ func GetUserHasPlayedHandler(c fiber.Ctx) error {
 	// URL decoding
 	id := c.Query("id")
 
-	userHasPlayed, err := db.GetUserHasPlayedByID(db.Dbs, id)
+	userGames, err := db.GetUserGameByDiscordID(db.Dbs, id)
 	if err != nil {
 		slog.Error("SelectUserHasPlayed", "err", err, "id", id)
 		return c.Status(fiber.StatusInternalServerError).JSON(dto.TResponse[any]{
@@ -69,25 +69,29 @@ func GetUserHasPlayedHandler(c fiber.Ctx) error {
 		})
 	}
 
-	userHasPlayedResp := make([]dto.UserHasPlayed, 0, len(userHasPlayed))
-	for _, hasPlayed := range userHasPlayed {
-		dtoItem := dto.UserHasPlayed{
-			UserID:      hasPlayed.UserID,
-			GameErogsID: hasPlayed.GameErogsID,
-			CompletedAt: hasPlayed.CompletedAt,
-			CreatedAt:   hasPlayed.CreatedAt,
+	userHasPlayedResp := make([]dto.UserHasPlayed, 0, len(userGames))
+	for _, game := range userGames {
+		if game.Status != 1 {
+			continue
 		}
 
-		if hasPlayed.GameErogs != nil {
-			dtoItem.GameID = hasPlayed.GameErogs.ID
-			dtoItem.BrandID = hasPlayed.GameErogs.BrandErogsID
-			dtoItem.GameName = hasPlayed.GameErogs.Name
-			dtoItem.GameImage = hasPlayed.GameErogs.Image
+		dtoItem := dto.UserHasPlayed{
+			UserID:      id,
+			GameErogsID: game.GameErogsID,
+			CompletedAt: game.FinishedDate,
+			CreatedAt:   game.CreatedAt,
+		}
 
-			if hasPlayed.GameErogs.BrandErogs != nil {
-				dtoItem.BrandName = hasPlayed.GameErogs.BrandErogs.Name
-				dtoItem.Disband = hasPlayed.GameErogs.BrandErogs.Disband
-				dtoItem.BrandGameCount = hasPlayed.GameErogs.BrandErogs.GameCount
+		if game.GameErogs != nil {
+			dtoItem.GameID = game.GameErogs.ID
+			dtoItem.BrandID = game.GameErogs.BrandErogsID
+			dtoItem.GameName = game.GameErogs.Name
+			dtoItem.GameImage = game.GameErogs.Image
+
+			if game.GameErogs.BrandErogs != nil {
+				dtoItem.BrandName = game.GameErogs.BrandErogs.Name
+				dtoItem.Disband = game.GameErogs.BrandErogs.Disband
+				dtoItem.BrandGameCount = game.GameErogs.BrandErogs.GameCount
 			}
 		}
 
@@ -105,7 +109,7 @@ func GetUserInWishHandler(c fiber.Ctx) error {
 	// URL decoding
 	id := c.Query("id")
 
-	userInWish, err := db.GetUserInWishByID(db.Dbs, id)
+	userGames, err := db.GetUserGameByDiscordID(db.Dbs, id)
 	if err != nil {
 		slog.Error("SelectUserInWish", "err", err, "id", id)
 		return c.Status(fiber.StatusInternalServerError).JSON(dto.TResponse[any]{
@@ -114,24 +118,28 @@ func GetUserInWishHandler(c fiber.Ctx) error {
 		})
 	}
 
-	userInWishResp := make([]dto.UserInWish, 0, len(userInWish))
-	for _, inWish := range userInWish {
-		dtoItem := dto.UserInWish{
-			UserID:      inWish.UserID,
-			GameErogsID: inWish.GameErogsID,
-			CreatedAt:   inWish.CreatedAt,
+	userInWishResp := make([]dto.UserInWish, 0, len(userGames))
+	for _, game := range userGames {
+		if !game.WishListMark {
+			continue
 		}
 
-		if inWish.GameErogs != nil {
-			dtoItem.GameID = inWish.GameErogs.ID
-			dtoItem.BrandID = inWish.GameErogs.BrandErogsID
-			dtoItem.GameName = inWish.GameErogs.Name
-			dtoItem.GameImage = inWish.GameErogs.Image
+		dtoItem := dto.UserInWish{
+			UserID:      id,
+			GameErogsID: game.GameErogsID,
+			CreatedAt:   game.CreatedAt,
+		}
 
-			if inWish.GameErogs.BrandErogs != nil {
-				dtoItem.BrandName = inWish.GameErogs.BrandErogs.Name
-				dtoItem.Disband = inWish.GameErogs.BrandErogs.Disband
-				dtoItem.BrandGameCount = inWish.GameErogs.BrandErogs.GameCount
+		if game.GameErogs != nil {
+			dtoItem.GameID = game.GameErogs.ID
+			dtoItem.BrandID = game.GameErogs.BrandErogsID
+			dtoItem.GameName = game.GameErogs.Name
+			dtoItem.GameImage = game.GameErogs.Image
+
+			if game.GameErogs.BrandErogs != nil {
+				dtoItem.BrandName = game.GameErogs.BrandErogs.Name
+				dtoItem.Disband = game.GameErogs.BrandErogs.Disband
+				dtoItem.BrandGameCount = game.GameErogs.BrandErogs.GameCount
 			}
 		}
 
@@ -150,12 +158,19 @@ func GetUserHasPlayedLegacyHandler(c fiber.Ctx) error {
 	// URL decoding
 	id := c.Query("id")
 
-	userHasPlayed, err := db.GetUserHasPlayedByID(db.Dbs, id)
+	userGames, err := db.GetUserGameByDiscordID(db.Dbs, id)
 	if err != nil {
 		slog.Error("SelectUserHasPlayed", "err", err, "id", id)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err,
 		})
+	}
+
+	userHasPlayed := make([]db.UserGame, 0, len(userGames))
+	for _, game := range userGames {
+		if game.Status == 1 {
+			userHasPlayed = append(userHasPlayed, game)
+		}
 	}
 
 	slog.Info("GetUserHasPlayedLegacyHandler success", "id", id, "count", len(userHasPlayed))
