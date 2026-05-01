@@ -44,9 +44,9 @@ func GetRegisterLinkHandler(c fiber.Ctx) error {
 		})
 	}
 
-	return c.Status(fiber.StatusOK).JSON(dto.TResponse[dto.RegisterLookupData]{
+	return c.Status(fiber.StatusOK).JSON(dto.TResponse[dto.RegisterLookupResponse]{
 		Message: "ok",
-		Data: dto.RegisterLookupData{
+		Data: dto.RegisterLookupResponse{
 			DiscordID: cacheData.DiscordID,
 		},
 	})
@@ -178,9 +178,9 @@ func GetUser(c fiber.Ctx) error {
 		})
 	}
 
-	var userReturn []dto.User
+	var userReturn []dto.UserResponse
 	for _, u := range users {
-		userReturn = append(userReturn, dto.User{
+		userReturn = append(userReturn, dto.UserResponse{
 			ID:        discordIDOrEmpty(u.DiscordID),
 			Name:      u.Name,
 			CreatedAt: u.CreatedAt,
@@ -189,7 +189,7 @@ func GetUser(c fiber.Ctx) error {
 	}
 
 	slog.Info("GetUser success", "count", len(userReturn))
-	return c.Status(fiber.StatusOK).JSON(dto.TResponse[[]dto.User]{
+	return c.Status(fiber.StatusOK).JSON(dto.TResponse[[]dto.UserResponse]{
 		Message: "ok",
 		Data:    userReturn,
 	})
@@ -208,13 +208,13 @@ func GetUserHasPlayedHandler(c fiber.Ctx) error {
 		})
 	}
 
-	userHasPlayedResp := make([]dto.UserHasPlayed, 0, len(userGames))
+	userHasPlayedResp := make([]dto.UserHasPlayedResponse, 0, len(userGames))
 	for _, game := range userGames {
 		if game.Status != 1 {
 			continue
 		}
 
-		dtoItem := dto.UserHasPlayed{
+		dtoItem := dto.UserHasPlayedResponse{
 			UserID:      id,
 			GameErogsID: game.GameErogsID,
 			CompletedAt: game.FinishedDate,
@@ -238,7 +238,7 @@ func GetUserHasPlayedHandler(c fiber.Ctx) error {
 	}
 
 	slog.Info("GetUserHasPlayedHandler success", "id", id, "count", len(userHasPlayedResp))
-	return c.Status(fiber.StatusOK).JSON(dto.TResponse[[]dto.UserHasPlayed]{
+	return c.Status(fiber.StatusOK).JSON(dto.TResponse[[]dto.UserHasPlayedResponse]{
 		Message: "search successfully",
 		Data:    userHasPlayedResp,
 	})
@@ -257,13 +257,13 @@ func GetUserInWishHandler(c fiber.Ctx) error {
 		})
 	}
 
-	userInWishResp := make([]dto.UserInWish, 0, len(userGames))
+	userInWishResp := make([]dto.UserInWishResponse, 0, len(userGames))
 	for _, game := range userGames {
 		if !game.WishListMark {
 			continue
 		}
 
-		dtoItem := dto.UserInWish{
+		dtoItem := dto.UserInWishResponse{
 			UserID:      id,
 			GameErogsID: game.GameErogsID,
 			CreatedAt:   game.CreatedAt,
@@ -286,7 +286,7 @@ func GetUserInWishHandler(c fiber.Ctx) error {
 	}
 
 	slog.Info("GetUserInWishHandler success", "id", id, "count", len(userInWishResp))
-	return c.Status(fiber.StatusOK).JSON(dto.TResponse[[]dto.UserInWish]{
+	return c.Status(fiber.StatusOK).JSON(dto.TResponse[[]dto.UserInWishResponse]{
 		Message: "search successfully",
 		Data:    userInWishResp,
 	})
