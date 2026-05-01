@@ -2,14 +2,20 @@ package dto
 
 import "time"
 
-type User struct {
+type RegisterRequest struct {
+	RegisterID string `json:"register_id"`
+	UserName   string `json:"user_name"`
+	Password   string `json:"password"`
+}
+
+type UserResponse struct {
 	ID        string    `json:"id"`
 	Name      string    `json:"name"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 }
 
-type UserHasPlayed struct {
+type UserHasPlayedResponse struct {
 	UserID         string     `json:"userId"`
 	GameErogsID    int        `json:"gameErogsId"`
 	CompletedAt    *time.Time `json:"completedAt,omitempty"`
@@ -23,7 +29,7 @@ type UserHasPlayed struct {
 	BrandGameCount int        `json:"brandGameCount"`
 }
 
-type UserInWish struct {
+type UserInWishResponse struct {
 	UserID         string    `json:"userId"`
 	GameErogsID    int       `json:"gameErogsId"`
 	CreatedAt      time.Time `json:"createdAt"`
@@ -34,4 +40,13 @@ type UserInWish struct {
 	BrandName      string    `json:"brandName"`
 	Disband        bool      `json:"disband"`
 	BrandGameCount int       `json:"brandGameCount"`
+}
+
+type RegisterResponse struct {
+	DiscordID string `json:"discord_id"`
+	UserName  string `json:"user_name"`
+}
+
+type RegisterLookupResponse struct {
+	DiscordID string `json:"discord_id"`
 }

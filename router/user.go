@@ -25,6 +25,14 @@ func UserRouter(apiGroup fiber.Router) {
 	userDataGroup.Get("/wish", middlware.TokenAuth(), func(c fiber.Ctx) error {
 		return handler.GetUserInWishHandler(c)
 	})
+
+	userDataGroup.Get("/register-link", middlware.TokenAuth(), func(c fiber.Ctx) error {
+		return handler.GetRegisterLinkHandler(c)
+	})
+
+	userDataGroup.Post("/register", middlware.TokenAuth(), func(c fiber.Ctx) error {
+		return handler.RegisterUserHandler(c)
+	})
 }
 
 // 舊版API
