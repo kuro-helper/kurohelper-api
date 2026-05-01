@@ -35,3 +35,19 @@ type UserInWish struct {
 	Disband        bool      `json:"disband"`
 	BrandGameCount int       `json:"brandGameCount"`
 }
+
+type RegisterRequest struct {
+	RegisterID string `json:"register_id"`
+	UserName   string `json:"user_name"`
+	Password   string `json:"password"`
+}
+
+type RegisterResponse struct {
+	DiscordID string `json:"discord_id"`
+	UserName  string `json:"user_name"`
+}
+
+// RegisterLookupData 註冊邀請快取查詢結果（僅回傳 Discord ID）
+type RegisterLookupData struct {
+	DiscordID string `json:"discord_id"`
+}

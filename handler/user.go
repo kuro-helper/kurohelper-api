@@ -7,10 +7,149 @@ import (
 	"strings"
 
 	"github.com/gofiber/fiber/v3"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 
 	"kurohelperservice/db"
 )
+
+func discordIDOrEmpty(discordID *string) string {
+	if discordID == nil {
+		return ""
+	}
+	return *discordID
+}
+
+func GetRegisterLinkHandler(c fiber.Ctx) error {
+	registerID := strings.TrimSpace(c.Query("register_id"))
+	if registerID == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(dto.TResponse[any]{
+			Message: "register_id 不可為空",
+			Data:    nil,
+		})
+	}
+
+	cacheData, err := db.GetRegisterCacheByID(db.Dbs, registerID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return c.Status(fiber.StatusNotFound).JSON(dto.TResponse[any]{
+				Message: "註冊連結不存在或已過期",
+				Data:    nil,
+			})
+		}
+		slog.Error("GetRegisterCacheByID", "err", err, "register_id", registerID)
+		return c.Status(fiber.StatusInternalServerError).JSON(dto.TResponse[any]{
+			Message: "發生錯誤，請稍後再試",
+			Data:    nil,
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(dto.TResponse[dto.RegisterLookupData]{
+		Message: "ok",
+		Data: dto.RegisterLookupData{
+			DiscordID: cacheData.DiscordID,
+		},
+	})
+}
+
+func RegisterUserHandler(c fiber.Ctx) error {
+	var req dto.RegisterRequest
+	if err := c.Bind().Body(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(dto.TResponse[any]{
+			Message: "請求格式錯誤",
+			Data:    nil,
+		})
+	}
+
+	req.RegisterID = strings.TrimSpace(req.RegisterID)
+	req.UserName = strings.TrimSpace(req.UserName)
+	req.Password = strings.TrimSpace(req.Password)
+
+	if req.RegisterID == "" || req.UserName == "" || req.Password == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(dto.TResponse[any]{
+			Message: "register_id、user_name、password 不可為空",
+			Data:    nil,
+		})
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		slog.Error("GenerateFromPassword", "err", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(dto.TResponse[any]{
+			Message: "密碼加密失敗，請稍後再試",
+			Data:    nil,
+		})
+	}
+
+	discordID := ""
+	err = db.Dbs.Transaction(func(tx *gorm.DB) error {
+		cacheData, err := db.GetRegisterCacheByID(tx, req.RegisterID)
+		if err != nil {
+			return err
+		}
+		discordID = cacheData.DiscordID
+
+		user, err := db.EnsureDiscordUser(tx, cacheData.DiscordID, req.UserName)
+		if err != nil {
+			return err
+		}
+
+		// 確保username不重複
+		existUserAuth, err := db.GetUserAuthByUsername(tx, req.UserName)
+		if err == nil && existUserAuth.UserID != user.ID {
+			return db.ErrUniqueViolation
+		}
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			return err
+		}
+
+		// 確保不重複註冊
+		_, err = db.GetUserAuthByUserID(tx, user.ID)
+		if err == nil {
+			return db.ErrUniqueViolation
+		}
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return err
+		}
+
+		if err := db.CreateUserAuth(tx, user.ID, req.UserName, string(hashedPassword)); err != nil {
+			return err
+		}
+
+		if err := db.DeleteRegisterCacheByID(tx, req.RegisterID); err != nil {
+			return err
+		}
+
+		return nil
+	})
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return c.Status(fiber.StatusNotFound).JSON(dto.TResponse[any]{
+				Message: "註冊連結不存在或已過期",
+				Data:    nil,
+			})
+		}
+		if errors.Is(err, db.ErrUniqueViolation) {
+			return c.Status(fiber.StatusConflict).JSON(dto.TResponse[any]{
+				Message: "user_name 已存在或該 Discord 帳號已註冊",
+				Data:    nil,
+			})
+		}
+		slog.Error("RegisterUserHandler", "err", err, "register_id", req.RegisterID, "discord_id", discordID)
+		return c.Status(fiber.StatusInternalServerError).JSON(dto.TResponse[any]{
+			Message: "註冊失敗，請稍後再試",
+			Data:    nil,
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(dto.TResponse[dto.RegisterResponse]{
+		Message: "register successfully",
+		Data: dto.RegisterResponse{
+			DiscordID: discordID,
+			UserName:  req.UserName,
+		},
+	})
+}
 
 func GetUser(c fiber.Ctx) error {
 	// URL decoding
@@ -42,7 +181,7 @@ func GetUser(c fiber.Ctx) error {
 	var userReturn []dto.User
 	for _, u := range users {
 		userReturn = append(userReturn, dto.User{
-			ID:        u.DiscordID,
+			ID:        discordIDOrEmpty(u.DiscordID),
 			Name:      u.Name,
 			CreatedAt: u.CreatedAt,
 			UpdatedAt: u.UpdatedAt,
