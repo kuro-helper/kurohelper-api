@@ -98,8 +98,18 @@ func RegisterUserHandler(c fiber.Ctx) error {
 		}
 		discordID = cacheData.DiscordID
 
-		user, err := db.EnsureDiscordUser(tx, cacheData.DiscordID, req.UserName)
-		if err != nil {
+		var user db.User
+		existing, err := db.GetUserByDiscordID(tx, cacheData.DiscordID)
+		switch {
+		case err == nil:
+			user = existing
+		case errors.Is(err, gorm.ErrRecordNotFound):
+			created, err := db.EnsureDiscordUser(tx, cacheData.DiscordID, req.UserName)
+			if err != nil {
+				return err
+			}
+			user = *created
+		default:
 			return err
 		}
 
