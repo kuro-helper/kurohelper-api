@@ -31,4 +31,4 @@ jobs:
     needs: commit-lint
     uses: kuro-helper/.github/.github/workflows/go-build.yml@main
     with:
-      use_kurohelperservice: "067589e019e45fc3bbdabfd09f020e46b5180afa"
+      use_kurohelperservice: "d1096e369b48be9b819da5c8e3ca08c71db87411"
