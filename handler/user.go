@@ -4,6 +4,7 @@ import (
 	"errors"
 	"kurohelper-api/dto"
 	"log/slog"
+	"strconv"
 	"strings"
 
 	"github.com/gofiber/fiber/v3"
@@ -215,6 +216,95 @@ func GetUser(c fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(dto.TResponse[[]dto.UserResponse]{
 		Message: "ok",
 		Data:    userReturn,
+	})
+}
+
+func toUserGameResponse(game db.UserGame) dto.UserGameResponse {
+	item := dto.UserGameResponse{
+		UserID:        game.UserID,
+		GameErogsID:   game.GameErogsID,
+		Status:        game.Status,
+		WishListMark:  game.WishListMark,
+		BlackListMark: game.BlackListMark,
+		StartDate:     game.StartDate,
+		FinishedDate:  game.FinishedDate,
+		CreatedAt:     game.CreatedAt,
+		UpdatedAt:     game.UpdatedAt,
+	}
+
+	if game.GameErogs == nil {
+		return item
+	}
+
+	gameErogs := dto.UserGameErogsResponse{
+		ID:           game.GameErogs.ID,
+		BrandErogsID: game.GameErogs.BrandErogsID,
+		Name:         game.GameErogs.Name,
+		Image:        game.GameErogs.Image,
+		CreatedAt:    game.GameErogs.CreatedAt,
+		UpdatedAt:    game.GameErogs.UpdatedAt,
+	}
+
+	if game.GameErogs.BrandErogs != nil {
+		brand := game.GameErogs.BrandErogs
+		gameErogs.BrandErogs = &dto.UserGameBrandErogsResponse{
+			ID:        brand.ID,
+			Name:      brand.Name,
+			Disband:   brand.Disband,
+			GameCount: brand.GameCount,
+			CreatedAt: brand.CreatedAt,
+			UpdatedAt: brand.UpdatedAt,
+		}
+	}
+
+	item.GameErogs = &gameErogs
+	return item
+}
+
+func GetUserGameHandler(c fiber.Ctx) error {
+	id := strings.TrimSpace(c.Params("id"))
+	userID, err := strconv.Atoi(id)
+	if err != nil || userID <= 0 {
+		slog.Warn("GetUserGameHandler bad request", "reason", "invalid id", "id", id)
+		return c.Status(fiber.StatusBadRequest).JSON(dto.TResponse[any]{
+			Message: "id 格式錯誤",
+			Data:    nil,
+		})
+	}
+
+	if _, err := db.GetUser(db.Dbs, id); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			slog.Warn("GetUserGameHandler not found", "id", id)
+			return c.Status(fiber.StatusNotFound).JSON(dto.TResponse[any]{
+				Message: "找不到該使用者",
+				Data:    nil,
+			})
+		}
+		slog.Error("GetUser", "err", err, "id", id)
+		return c.Status(fiber.StatusInternalServerError).JSON(dto.TResponse[any]{
+			Message: "發生錯誤，請稍後再試",
+			Data:    nil,
+		})
+	}
+
+	userGames, err := db.GetUserGameByUserID(db.Dbs, userID)
+	if err != nil {
+		slog.Error("GetUserGameByUserID", "err", err, "id", id)
+		return c.Status(fiber.StatusInternalServerError).JSON(dto.TResponse[any]{
+			Message: "發生錯誤，請稍後再試",
+			Data:    nil,
+		})
+	}
+
+	userGameResp := make([]dto.UserGameResponse, 0, len(userGames))
+	for _, game := range userGames {
+		userGameResp = append(userGameResp, toUserGameResponse(game))
+	}
+
+	slog.Info("GetUserGameHandler success", "id", id, "count", len(userGameResp))
+	return c.Status(fiber.StatusOK).JSON(dto.TResponse[[]dto.UserGameResponse]{
+		Message: "ok",
+		Data:    userGameResp,
 	})
 }
 

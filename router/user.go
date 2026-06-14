@@ -16,6 +16,10 @@ func UserRouter(apiGroup fiber.Router) {
 		return handler.GetUser(c)
 	})
 
+	userDataGroup.Get("/:id/game", middlware.TokenAuth(), func(c fiber.Ctx) error {
+		return handler.GetUserGameHandler(c)
+	})
+
 	// 獲取指定使用者全部的遊玩資料
 	userDataGroup.Get("/played", middlware.TokenAuth(), func(c fiber.Ctx) error {
 		return handler.GetUserHasPlayedHandler(c)
