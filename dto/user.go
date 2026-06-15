@@ -9,10 +9,28 @@ type RegisterRequest struct {
 }
 
 type UserResponse struct {
-	ID        string    `json:"id"`
+	ID        int       `json:"id"`
 	Name      string    `json:"name"`
+	DiscordID string    `json:"discordId"`
+	Role      int       `json:"role"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
+}
+
+type UserProfileResponse struct {
+	ID          int       `json:"id"`
+	Name        string    `json:"name"`
+	DiscordID   string    `json:"discordId,omitempty"`
+	Avatar      string    `json:"avatar"`
+	Description string    `json:"description"`
+	Role        int       `json:"role"`
+	CreatedAt   time.Time `json:"createdAt"`
+	UpdatedAt   time.Time `json:"updatedAt"`
+}
+
+type GetUserGameResponse struct {
+	User  UserProfileResponse  `json:"user"`
+	Games []UserGameResponse   `json:"games"`
 }
 
 type UserHasPlayedResponse struct {
@@ -45,7 +63,7 @@ type UserInWishResponse struct {
 type UserGameResponse struct {
 	UserID        int                    `json:"userId"`
 	GameErogsID   int                    `json:"gameErogsId"`
-	Status        int                    `json:"status"`
+	Status        string                 `json:"status"`
 	WishListMark  bool                   `json:"wishListMark"`
 	BlackListMark bool                   `json:"blackListMark"`
 	StartDate     *time.Time             `json:"startDate,omitempty"`

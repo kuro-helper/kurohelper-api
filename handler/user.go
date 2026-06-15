@@ -205,8 +205,10 @@ func GetUser(c fiber.Ctx) error {
 	var userReturn []dto.UserResponse
 	for _, u := range users {
 		userReturn = append(userReturn, dto.UserResponse{
-			ID:        discordIDOrEmpty(u.DiscordID),
+			ID:        u.ID,
 			Name:      u.Name,
+			DiscordID: discordIDOrEmpty(u.DiscordID),
+			Role:      u.Role,
 			CreatedAt: u.CreatedAt,
 			UpdatedAt: u.UpdatedAt,
 		})
@@ -219,11 +221,31 @@ func GetUser(c fiber.Ctx) error {
 	})
 }
 
+func toUserProfileResponse(u db.User) dto.UserProfileResponse {
+	return dto.UserProfileResponse{
+		ID:          u.ID,
+		Name:        u.Name,
+		DiscordID:   discordIDOrEmpty(u.DiscordID),
+		Avatar:      u.Avatar,
+		Description: u.Description,
+		Role:        u.Role,
+		CreatedAt:   u.CreatedAt,
+		UpdatedAt:   u.UpdatedAt,
+	}
+}
+
+func userGameStatusText(status int) string {
+	if status == 1 {
+		return "finished"
+	}
+	return strconv.Itoa(status)
+}
+
 func toUserGameResponse(game db.UserGame) dto.UserGameResponse {
 	item := dto.UserGameResponse{
 		UserID:        game.UserID,
 		GameErogsID:   game.GameErogsID,
-		Status:        game.Status,
+		Status:        userGameStatusText(game.Status),
 		WishListMark:  game.WishListMark,
 		BlackListMark: game.BlackListMark,
 		StartDate:     game.StartDate,
@@ -261,6 +283,21 @@ func toUserGameResponse(game db.UserGame) dto.UserGameResponse {
 	return item
 }
 
+func toUserGamesResponse(games []db.UserGame) []dto.UserGameResponse {
+	resp := make([]dto.UserGameResponse, 0, len(games))
+	for _, game := range games {
+		resp = append(resp, toUserGameResponse(game))
+	}
+	return resp
+}
+
+func toGetUserGameResponse(u db.User, games []db.UserGame) dto.GetUserGameResponse {
+	return dto.GetUserGameResponse{
+		User:  toUserProfileResponse(u),
+		Games: toUserGamesResponse(games),
+	}
+}
+
 func GetUserGameHandler(c fiber.Ctx) error {
 	id := strings.TrimSpace(c.Params("id"))
 	userID, err := strconv.Atoi(id)
@@ -272,7 +309,8 @@ func GetUserGameHandler(c fiber.Ctx) error {
 		})
 	}
 
-	if _, err := db.GetUser(db.Dbs, id); err != nil {
+	user, err := db.GetUser(db.Dbs, id)
+	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			slog.Warn("GetUserGameHandler not found", "id", id)
 			return c.Status(fiber.StatusNotFound).JSON(dto.TResponse[any]{
@@ -296,15 +334,10 @@ func GetUserGameHandler(c fiber.Ctx) error {
 		})
 	}
 
-	userGameResp := make([]dto.UserGameResponse, 0, len(userGames))
-	for _, game := range userGames {
-		userGameResp = append(userGameResp, toUserGameResponse(game))
-	}
-
-	slog.Info("GetUserGameHandler success", "id", id, "count", len(userGameResp))
-	return c.Status(fiber.StatusOK).JSON(dto.TResponse[[]dto.UserGameResponse]{
+	slog.Info("GetUserGameHandler success", "id", id, "count", len(userGames))
+	return c.Status(fiber.StatusOK).JSON(dto.TResponse[dto.GetUserGameResponse]{
 		Message: "ok",
-		Data:    userGameResp,
+		Data:    toGetUserGameResponse(user, userGames),
 	})
 }
 
