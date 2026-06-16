@@ -11,7 +11,9 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/extractors"
 	"github.com/gofiber/fiber/v3/middleware/cors"
+	"github.com/gofiber/fiber/v3/middleware/session"
 	"github.com/joho/godotenv"
 	"github.com/lmittmann/tint"
 	slogmulti "github.com/samber/slog-multi"
@@ -89,6 +91,10 @@ func main() {
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
 		AllowCredentials: true,
+	}))
+
+	app.Use(session.New(session.Config{
+		Extractor: extractors.FromCookie("session_id"),
 	}))
 
 	// api route group
