@@ -7,7 +7,7 @@ import (
 	"github.com/gofiber/fiber/v3"
 )
 
-// 新版API
+// User資源獲取相關新版API
 func UserRouter(apiGroup fiber.Router) {
 	userDataGroup := apiGroup.Group("/user")
 

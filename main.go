@@ -11,7 +11,9 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/extractors"
 	"github.com/gofiber/fiber/v3/middleware/cors"
+	"github.com/gofiber/fiber/v3/middleware/session"
 	"github.com/joho/godotenv"
 	"github.com/lmittmann/tint"
 	slogmulti "github.com/samber/slog-multi"
@@ -91,6 +93,10 @@ func main() {
 		AllowCredentials: true,
 	}))
 
+	app.Use(session.New(session.Config{
+		Extractor: extractors.FromCookie("session_id"),
+	}))
+
 	// api route group
 	apiGroup := app.Group("/api") // main api route group
 
@@ -98,6 +104,7 @@ func main() {
 	// routes.TokenRouter(apiGroup)
 	router.UserLegacyRouter(apiGroup)
 	router.UserRouter(apiGroup)
+	router.AuthRouter(apiGroup)
 	// routes.SearchRouter(apiGroup)
 
 	addr := fmt.Sprintf("127.0.0.1:%s", os.Getenv("PRODUCTION_PORT"))

@@ -10,6 +10,7 @@ var (
 	VaildToken = make(map[string]struct{})
 )
 
+// 驗證有無合法Token
 func TokenAuth() fiber.Handler {
 	return func(c fiber.Ctx) error {
 		authHeader := c.Get("Authorization")
