@@ -104,6 +104,7 @@ func main() {
 	// routes.TokenRouter(apiGroup)
 	router.UserLegacyRouter(apiGroup)
 	router.UserRouter(apiGroup)
+	router.AuthRouter(apiGroup)
 	// routes.SearchRouter(apiGroup)
 
 	addr := fmt.Sprintf("127.0.0.1:%s", os.Getenv("PRODUCTION_PORT"))
