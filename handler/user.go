@@ -22,11 +22,11 @@ func discordIDOrEmpty(discordID *string) string {
 }
 
 func GetRegisterLinkHandler(c fiber.Ctx) error {
-	registerID := strings.TrimSpace(c.Query("register_id"))
+	registerID := strings.TrimSpace(c.Query("registerId"))
 	if registerID == "" {
-		slog.Warn("GetRegisterLinkHandler bad request", "reason", "empty register_id")
+		slog.Warn("GetRegisterLinkHandler bad request", "reason", "empty registerId")
 		return c.Status(fiber.StatusBadRequest).JSON(dto.TResponse[any]{
-			Message: "register_id 不可為空",
+			Message: "registerId 不可為空",
 			Data:    nil,
 		})
 	}
@@ -34,20 +34,20 @@ func GetRegisterLinkHandler(c fiber.Ctx) error {
 	cacheData, err := db.GetRegisterCacheByID(db.Dbs, registerID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			slog.Warn("GetRegisterLinkHandler not found", "register_id", registerID)
+			slog.Warn("GetRegisterLinkHandler not found", "registerId", registerID)
 			return c.Status(fiber.StatusNotFound).JSON(dto.TResponse[any]{
 				Message: "註冊連結不存在或已過期",
 				Data:    nil,
 			})
 		}
-		slog.Error("GetRegisterCacheByID", "err", err, "register_id", registerID)
+		slog.Error("GetRegisterCacheByID", "err", err, "registerId", registerID)
 		return c.Status(fiber.StatusInternalServerError).JSON(dto.TResponse[any]{
 			Message: "發生錯誤，請稍後再試",
 			Data:    nil,
 		})
 	}
 
-	slog.Info("GetRegisterLinkHandler success", "register_id", registerID)
+	slog.Info("GetRegisterLinkHandler success", "registerId", registerID)
 	return c.Status(fiber.StatusOK).JSON(dto.TResponse[dto.RegisterLookupResponse]{
 		Message: "ok",
 		Data: dto.RegisterLookupResponse{
@@ -72,12 +72,12 @@ func RegisterUserHandler(c fiber.Ctx) error {
 
 	if req.RegisterID == "" || req.UserName == "" || req.Password == "" {
 		slog.Warn("RegisterUserHandler bad request", "reason", "empty fields",
-			"register_id_present", req.RegisterID != "",
-			"user_name_present", req.UserName != "",
-			"password_present", req.Password != "",
+			"registerIdPresent", req.RegisterID != "",
+			"userNamePresent", req.UserName != "",
+			"passwordPresent", req.Password != "",
 		)
 		return c.Status(fiber.StatusBadRequest).JSON(dto.TResponse[any]{
-			Message: "register_id、user_name、password 不可為空",
+			Message: "registerId、userName、password 不可為空",
 			Data:    nil,
 		})
 	}
@@ -144,27 +144,27 @@ func RegisterUserHandler(c fiber.Ctx) error {
 	})
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			slog.Warn("RegisterUserHandler not found", "register_id", req.RegisterID)
+			slog.Warn("RegisterUserHandler not found", "registerId", req.RegisterID)
 			return c.Status(fiber.StatusNotFound).JSON(dto.TResponse[any]{
 				Message: "註冊連結不存在或已過期",
 				Data:    nil,
 			})
 		}
 		if errors.Is(err, db.ErrUniqueViolation) {
-			slog.Warn("RegisterUserHandler conflict", "register_id", req.RegisterID, "discord_id", discordID, "user_name", req.UserName)
+			slog.Warn("RegisterUserHandler conflict", "registerId", req.RegisterID, "discordId", discordID, "userName", req.UserName)
 			return c.Status(fiber.StatusConflict).JSON(dto.TResponse[any]{
-				Message: "user_name 已存在或該 Discord 帳號已註冊",
+				Message: "userName 已存在或該 Discord 帳號已註冊",
 				Data:    nil,
 			})
 		}
-		slog.Error("RegisterUserHandler", "err", err, "register_id", req.RegisterID, "discord_id", discordID)
+		slog.Error("RegisterUserHandler", "err", err, "registerId", req.RegisterID, "discordId", discordID)
 		return c.Status(fiber.StatusInternalServerError).JSON(dto.TResponse[any]{
 			Message: "註冊失敗，請稍後再試",
 			Data:    nil,
 		})
 	}
 
-	slog.Info("RegisterUserHandler success", "discord_id", discordID, "user_name", req.UserName, "register_id", req.RegisterID)
+	slog.Info("RegisterUserHandler success", "discordId", discordID, "userName", req.UserName, "registerId", req.RegisterID)
 	return c.Status(fiber.StatusOK).JSON(dto.TResponse[dto.RegisterResponse]{
 		Message: "register successfully",
 		Data: dto.RegisterResponse{

@@ -3,8 +3,8 @@ package dto
 import "time"
 
 type RegisterRequest struct {
-	RegisterID string `json:"register_id"`
-	UserName   string `json:"user_name"`
+	RegisterID string `json:"registerId"`
+	UserName   string `json:"userName"`
 	Password   string `json:"password"`
 }
 
@@ -20,7 +20,7 @@ type UserResponse struct {
 type UserProfileResponse struct {
 	ID          int       `json:"id"`
 	Name        string    `json:"name"`
-	DiscordID   string    `json:"discordId,omitempty"`
+	DiscordID   string    `json:"discordId"`
 	Avatar      string    `json:"avatar"`
 	Description string    `json:"description"`
 	Role        int       `json:"role"`
@@ -41,7 +41,7 @@ type UserHasPlayedResponse struct {
 	GameID         int        `json:"gameId"`
 	BrandID        int        `json:"brandId"`
 	GameName       string     `json:"gameName"`
-	GameImage      string     `json:"gameimage"`
+	GameImage      string     `json:"gameImage"`
 	BrandName      string     `json:"brandName"`
 	Disband        bool       `json:"disband"`
 	BrandGameCount int        `json:"brandGameCount"`
@@ -54,7 +54,7 @@ type UserInWishResponse struct {
 	GameID         int       `json:"gameId"`
 	BrandID        int       `json:"brandId"`
 	GameName       string    `json:"gameName"`
-	GameImage      string    `json:"gameimage"`
+	GameImage      string    `json:"gameImage"`
 	BrandName      string    `json:"brandName"`
 	Disband        bool      `json:"disband"`
 	BrandGameCount int       `json:"brandGameCount"`
@@ -93,10 +93,10 @@ type UserGameBrandErogsResponse struct {
 }
 
 type RegisterResponse struct {
-	DiscordID string `json:"discord_id"`
-	UserName  string `json:"user_name"`
+	DiscordID string `json:"discordId"`
+	UserName  string `json:"userName"`
 }
 
 type RegisterLookupResponse struct {
-	DiscordID string `json:"discord_id"`
+	DiscordID string `json:"discordId"`
 }
