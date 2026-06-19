@@ -10,7 +10,7 @@ import (
 func AuthRouter(apiGroup fiber.Router) {
 	authGroup := apiGroup.Group("/auth")
 
-	authGroup.Post("/login", middlware.TokenAuth(), func(c fiber.Ctx) error {
+	authGroup.Post("/login", middlware.TokenAuth(true), func(c fiber.Ctx) error {
 		return handler.LoginHandler(c)
 	})
 }

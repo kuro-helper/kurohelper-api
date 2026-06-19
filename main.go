@@ -136,6 +136,6 @@ func initTokenCache() {
 	}
 
 	for _, t := range webAPIToken {
-		middlware.VaildToken[t.ID] = struct{}{}
+		middlware.VaildToken[t.ID] = t
 	}
 }
