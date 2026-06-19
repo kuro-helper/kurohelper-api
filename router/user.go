@@ -12,19 +12,19 @@ func UserRouter(apiGroup fiber.Router) {
 	userDataGroup := apiGroup.Group("/user")
 
 	// 獲取所有存在的User
-	userDataGroup.Get("/", middlware.TokenAuth(), func(c fiber.Ctx) error {
+	userDataGroup.Get("/", middlware.TokenAuth(false), func(c fiber.Ctx) error {
 		return handler.GetUser(c)
 	})
 
-	userDataGroup.Get("/:id/game", middlware.TokenAuth(), func(c fiber.Ctx) error {
+	userDataGroup.Get("/:id/game", middlware.TokenAuth(false), func(c fiber.Ctx) error {
 		return handler.GetUserGameHandler(c)
 	})
 
-	userDataGroup.Get("/register-link", middlware.TokenAuth(), func(c fiber.Ctx) error {
+	userDataGroup.Get("/register-link", middlware.TokenAuth(true), func(c fiber.Ctx) error {
 		return handler.GetRegisterLinkHandler(c)
 	})
 
-	userDataGroup.Post("/register", middlware.TokenAuth(), func(c fiber.Ctx) error {
+	userDataGroup.Post("/register", middlware.TokenAuth(true), func(c fiber.Ctx) error {
 		return handler.RegisterUserHandler(c)
 	})
 }

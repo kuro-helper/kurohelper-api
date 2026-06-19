@@ -3,15 +3,17 @@ package middlware
 import (
 	"strings"
 
+	kurohelperdb "kurohelperservice/db"
+
 	"github.com/gofiber/fiber/v3"
 )
 
 var (
-	VaildToken = make(map[string]struct{})
+	VaildToken = make(map[string]kurohelperdb.WebAPIToken)
 )
 
 // 驗證有無合法Token
-func TokenAuth() fiber.Handler {
+func TokenAuth(requirePrivileged bool) fiber.Handler {
 	return func(c fiber.Ctx) error {
 		authHeader := c.Get("Authorization")
 
@@ -31,13 +33,18 @@ func TokenAuth() fiber.Handler {
 
 		token := parts[1]
 
-		if _, ok := VaildToken[token]; !ok {
+		tokenData, ok := VaildToken[token]
+		if !ok {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"error": "invalid token",
 			})
 		}
 
-		// c.Locals("token", token)
+		if requirePrivileged && !tokenData.IsPrivileged {
+			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+				"error": "forbidden",
+			})
+		}
 
 		return c.Next()
 	}
