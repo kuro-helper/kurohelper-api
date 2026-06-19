@@ -33,33 +33,6 @@ type GetUserGameResponse struct {
 	Games []UserGameResponse   `json:"games"`
 }
 
-type UserHasPlayedResponse struct {
-	UserID         string     `json:"userId"`
-	GameErogsID    int        `json:"gameErogsId"`
-	CompletedAt    *time.Time `json:"completedAt,omitempty"`
-	CreatedAt      time.Time  `json:"createdAt"`
-	GameID         int        `json:"gameId"`
-	BrandID        int        `json:"brandId"`
-	GameName       string     `json:"gameName"`
-	GameImage      string     `json:"gameImage"`
-	BrandName      string     `json:"brandName"`
-	Disband        bool       `json:"disband"`
-	BrandGameCount int        `json:"brandGameCount"`
-}
-
-type UserInWishResponse struct {
-	UserID         string    `json:"userId"`
-	GameErogsID    int       `json:"gameErogsId"`
-	CreatedAt      time.Time `json:"createdAt"`
-	GameID         int       `json:"gameId"`
-	BrandID        int       `json:"brandId"`
-	GameName       string    `json:"gameName"`
-	GameImage      string    `json:"gameImage"`
-	BrandName      string    `json:"brandName"`
-	Disband        bool      `json:"disband"`
-	BrandGameCount int       `json:"brandGameCount"`
-}
-
 type UserGameResponse struct {
 	UserID        int                    `json:"userId"`
 	GameErogsID   int                    `json:"gameErogsId"`
