@@ -7,7 +7,6 @@ type LoginRequest struct {
 	Password string `json:"password"`
 }
 
-// SessionUser is the logged-in user snapshot stored in session.
 type SessionUser struct {
 	ID          int       `json:"id"`
 	Name        string    `json:"name"`
@@ -21,4 +20,19 @@ type SessionUser struct {
 
 type LoginResponse struct {
 	User SessionUser `json:"user"`
+}
+
+type MeUserResponse struct {
+	ID          int       `json:"id"`
+	Name        string    `json:"name"`
+	DiscordID   string    `json:"discordId"`
+	Avatar      string    `json:"avatar"`
+	Description string    `json:"description"`
+	Role        int       `json:"role"`
+	CreatedAt   time.Time `json:"createdAt"`
+	UpdatedAt   time.Time `json:"updatedAt"`
+}
+
+type MeResponse struct {
+	User *MeUserResponse `json:"user"`
 }
