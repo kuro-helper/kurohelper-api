@@ -3,13 +3,12 @@ package handler
 import (
 	"errors"
 	"kurohelper-api/dto"
-	"kurohelper-api/middlware"
+	"kurohelper-api/session"
 	"log/slog"
 	"strconv"
 	"strings"
 
 	"github.com/gofiber/fiber/v3"
-	"github.com/gofiber/fiber/v3/middleware/session"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 
@@ -61,15 +60,6 @@ func LoginHandler(c fiber.Ctx) error {
 		})
 	}
 
-	sess := session.FromContext(c)
-	if sess == nil {
-		slog.Error("LoginHandler session not available")
-		return c.Status(fiber.StatusInternalServerError).JSON(dto.TResponse[any]{
-			Message: "登入失敗，請稍後再試",
-			Data:    nil,
-		})
-	}
-
 	user, err := db.GetUser(db.Dbs, strconv.Itoa(auth.UserID))
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -87,7 +77,13 @@ func LoginHandler(c fiber.Ctx) error {
 	}
 
 	sessionUser := toSessionUser(user)
-	sess.Set(middlware.SessionUserKey, sessionUser)
+	if !session.SetUser(c, sessionUser) {
+		slog.Error("LoginHandler session not available")
+		return c.Status(fiber.StatusInternalServerError).JSON(dto.TResponse[any]{
+			Message: "登入失敗，請稍後再試",
+			Data:    nil,
+		})
+	}
 
 	slog.Info("LoginHandler success", "userId", sessionUser.ID, "userName", auth.Username)
 	return c.Status(fiber.StatusOK).JSON(dto.TResponse[dto.LoginResponse]{
@@ -96,6 +92,37 @@ func LoginHandler(c fiber.Ctx) error {
 			User: sessionUser,
 		},
 	})
+}
+
+func MeHandler(c fiber.Ctx) error {
+	user := session.LoadUser(c)
+	if user == nil {
+		return c.Status(fiber.StatusOK).JSON(dto.TResponse[dto.MeResponse]{
+			Message: "ok",
+			Data:    dto.MeResponse{User: nil},
+		})
+	}
+
+	meUser := toMeUserResponse(*user)
+	return c.Status(fiber.StatusOK).JSON(dto.TResponse[dto.MeResponse]{
+		Message: "ok",
+		Data: dto.MeResponse{
+			User: &meUser,
+		},
+	})
+}
+
+func toMeUserResponse(u dto.SessionUser) dto.MeUserResponse {
+	return dto.MeUserResponse{
+		ID:          u.ID,
+		Name:        u.Name,
+		DiscordID:   u.DiscordID,
+		Avatar:      u.Avatar,
+		Description: u.Description,
+		Role:        u.Role,
+		CreatedAt:   u.CreatedAt,
+		UpdatedAt:   u.UpdatedAt,
+	}
 }
 
 func toSessionUser(u db.User) dto.SessionUser {
