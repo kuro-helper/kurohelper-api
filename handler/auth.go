@@ -76,7 +76,7 @@ func LoginHandler(c fiber.Ctx) error {
 		})
 	}
 
-	sessionUser := toSessionUser(user)
+	sessionUser := session.NewUser(user, auth.Username)
 	if !session.SetUser(c, sessionUser) {
 		slog.Error("LoginHandler session not available")
 		return c.Status(fiber.StatusInternalServerError).JSON(dto.TResponse[any]{
@@ -85,11 +85,12 @@ func LoginHandler(c fiber.Ctx) error {
 		})
 	}
 
-	slog.Info("LoginHandler success", "userId", sessionUser.ID, "userName", auth.Username)
+	meUser := toAuthUser(user, auth.Username)
+	slog.Info("LoginHandler success", "userId", meUser.ID, "userName", auth.Username)
 	return c.Status(fiber.StatusOK).JSON(dto.TResponse[dto.LoginResponse]{
 		Message: "ok",
 		Data: dto.LoginResponse{
-			User: sessionUser,
+			User: meUser,
 		},
 	})
 }
@@ -103,7 +104,39 @@ func MeHandler(c fiber.Ctx) error {
 		})
 	}
 
-	meUser := toMeUserResponse(*user)
+	auth, err := db.GetUserAuthByUserID(db.Dbs, user.ID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			slog.Warn("MeHandler user auth not found", "userId", user.ID)
+			return c.Status(fiber.StatusUnauthorized).JSON(dto.TResponse[any]{
+				Message: "找不到登入帳號資料",
+				Data:    nil,
+			})
+		}
+		slog.Error("GetUserAuthByUserID", "err", err, "userId", user.ID)
+		return c.Status(fiber.StatusInternalServerError).JSON(dto.TResponse[any]{
+			Message: "發生錯誤，請稍後再試",
+			Data:    nil,
+		})
+	}
+
+	dbUser, err := db.GetUser(db.Dbs, strconv.Itoa(user.ID))
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			slog.Warn("MeHandler user not found", "userId", user.ID)
+			return c.Status(fiber.StatusUnauthorized).JSON(dto.TResponse[any]{
+				Message: "找不到使用者資料",
+				Data:    nil,
+			})
+		}
+		slog.Error("GetUser", "err", err, "userId", user.ID)
+		return c.Status(fiber.StatusInternalServerError).JSON(dto.TResponse[any]{
+			Message: "發生錯誤，請稍後再試",
+			Data:    nil,
+		})
+	}
+
+	meUser := toAuthUser(dbUser, auth.Username)
 	return c.Status(fiber.StatusOK).JSON(dto.TResponse[dto.MeResponse]{
 		Message: "ok",
 		Data: dto.MeResponse{
@@ -112,23 +145,11 @@ func MeHandler(c fiber.Ctx) error {
 	})
 }
 
-func toMeUserResponse(u dto.SessionUser) dto.MeUserResponse {
-	return dto.MeUserResponse{
+func toAuthUser(u db.User, userName string) dto.AuthUser {
+	return dto.AuthUser{
 		ID:          u.ID,
-		Name:        u.Name,
-		DiscordID:   u.DiscordID,
-		Avatar:      u.Avatar,
-		Description: u.Description,
-		Role:        u.Role,
-		CreatedAt:   u.CreatedAt,
-		UpdatedAt:   u.UpdatedAt,
-	}
-}
-
-func toSessionUser(u db.User) dto.SessionUser {
-	return dto.SessionUser{
-		ID:          u.ID,
-		Name:        u.Name,
+		UserName:    userName,
+		NickName:    u.Name,
 		DiscordID:   discordIDOrEmpty(u.DiscordID),
 		Avatar:      u.Avatar,
 		Description: u.Description,

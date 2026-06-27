@@ -2,10 +2,12 @@ package session
 
 import (
 	"encoding/gob"
-	"kurohelper-api/dto"
+	"time"
 
 	"github.com/gofiber/fiber/v3"
 	fibersession "github.com/gofiber/fiber/v3/middleware/session"
+
+	"kurohelperservice/db"
 )
 
 const (
@@ -13,11 +15,24 @@ const (
 	localsKey  = "sessionUser"
 )
 
-func init() {
-	gob.Register(dto.SessionUser{})
+// User is the logged-in user snapshot stored in session (not an API contract).
+type User struct {
+	ID          int
+	UserName    string
+	NickName    string
+	DiscordID   string
+	Avatar      string
+	Description string
+	Role        int
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }
 
-func SetUser(c fiber.Ctx, user dto.SessionUser) bool {
+func init() {
+	gob.Register(User{})
+}
+
+func SetUser(c fiber.Ctx, user User) bool {
 	sess := fibersession.FromContext(c)
 	if sess == nil {
 		return false
@@ -27,7 +42,7 @@ func SetUser(c fiber.Ctx, user dto.SessionUser) bool {
 	return true
 }
 
-func LoadUser(c fiber.Ctx) *dto.SessionUser {
+func LoadUser(c fiber.Ctx) *User {
 	if user := UserFromLocals(c); user != nil {
 		return user
 	}
@@ -42,7 +57,7 @@ func LoadUser(c fiber.Ctx) *dto.SessionUser {
 		return nil
 	}
 
-	user, ok := raw.(dto.SessionUser)
+	user, ok := raw.(User)
 	if !ok {
 		return nil
 	}
@@ -51,16 +66,37 @@ func LoadUser(c fiber.Ctx) *dto.SessionUser {
 	return &user
 }
 
-func UserFromLocals(c fiber.Ctx) *dto.SessionUser {
+func UserFromLocals(c fiber.Ctx) *User {
 	raw := c.Locals(localsKey)
 	if raw == nil {
 		return nil
 	}
 
-	user, ok := raw.(dto.SessionUser)
+	user, ok := raw.(User)
 	if !ok {
 		return nil
 	}
 
 	return &user
+}
+
+func discordIDOrEmpty(discordID *string) string {
+	if discordID == nil {
+		return ""
+	}
+	return *discordID
+}
+
+func NewUser(u db.User, userName string) User {
+	return User{
+		ID:          u.ID,
+		UserName:    userName,
+		NickName:    u.Name,
+		DiscordID:   discordIDOrEmpty(u.DiscordID),
+		Avatar:      u.Avatar,
+		Description: u.Description,
+		Role:        u.Role,
+		CreatedAt:   u.CreatedAt,
+		UpdatedAt:   u.UpdatedAt,
+	}
 }
