@@ -3,6 +3,7 @@ package handler
 import (
 	"errors"
 	"kurohelper-api/dto"
+	"kurohelper-api/session"
 	"log/slog"
 	"strconv"
 	"strings"
@@ -206,7 +207,7 @@ func GetUser(c fiber.Ctx) error {
 	for _, u := range users {
 		userReturn = append(userReturn, dto.UserResponse{
 			ID:        u.ID,
-			Name:      u.Name,
+			NickName:  u.Name,
 			DiscordID: discordIDOrEmpty(u.DiscordID),
 			Role:      u.Role,
 			CreatedAt: u.CreatedAt,
@@ -221,10 +222,19 @@ func GetUser(c fiber.Ctx) error {
 	})
 }
 
+func profileAuthUserName(userID int) string {
+	auth, err := db.GetUserAuthByUserID(db.Dbs, userID)
+	if err != nil {
+		return ""
+	}
+	return auth.Username
+}
+
 func toUserProfileResponse(u db.User) dto.UserProfileResponse {
 	return dto.UserProfileResponse{
 		ID:          u.ID,
-		Name:        u.Name,
+		UserName:    profileAuthUserName(u.ID),
+		NickName:    u.Name,
 		DiscordID:   discordIDOrEmpty(u.DiscordID),
 		Avatar:      u.Avatar,
 		Description: u.Description,
@@ -339,4 +349,118 @@ func GetUserGameHandler(c fiber.Ctx) error {
 		Message: "ok",
 		Data:    toGetUserGameResponse(user, userGames),
 	})
+}
+
+func UpdateUserHandler(c fiber.Ctx) error {
+	me := session.LoadUser(c)
+	if me == nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(dto.TResponse[any]{
+			Message: "未登入",
+			Data:    nil,
+		})
+	}
+
+	id := strings.TrimSpace(c.Params("id"))
+	userID, err := strconv.Atoi(id)
+	if err != nil || userID <= 0 {
+		slog.Warn("UpdateUserHandler bad request", "reason", "invalid id", "id", id)
+		return c.Status(fiber.StatusBadRequest).JSON(dto.TResponse[any]{
+			Message: "id 格式錯誤",
+			Data:    nil,
+		})
+	}
+
+	if me.ID != userID {
+		slog.Warn("UpdateUserHandler forbidden", "sessionUserId", me.ID, "targetId", userID)
+		return c.Status(fiber.StatusForbidden).JSON(dto.TResponse[any]{
+			Message: "無法修改他人的個人資料",
+			Data:    nil,
+		})
+	}
+
+	var req dto.UpdateUserRequest
+	if err := c.Bind().Body(&req); err != nil {
+		slog.Warn("UpdateUserHandler bad request", "reason", "bind body", "err", err)
+		return c.Status(fiber.StatusBadRequest).JSON(dto.TResponse[any]{
+			Message: "請求格式錯誤",
+			Data:    nil,
+		})
+	}
+
+	req.NickName = strings.TrimSpace(req.NickName)
+	req.Description = strings.TrimSpace(req.Description)
+	req.Avatar = strings.TrimSpace(req.Avatar)
+
+	if req.NickName == "" {
+		slog.Warn("UpdateUserHandler bad request", "reason", "empty nickName", "userId", userID)
+		return c.Status(fiber.StatusBadRequest).JSON(dto.TResponse[any]{
+			Message: "暱稱不可為空",
+			Data:    nil,
+		})
+	}
+
+	if err := validateAvatarURL(req.Avatar); err != nil {
+		slog.Warn("UpdateUserHandler bad request", "reason", "invalid avatar", "userId", userID)
+		return c.Status(fiber.StatusBadRequest).JSON(dto.TResponse[any]{
+			Message: "大頭照 URL 格式不正確（需以 http:// 或 https:// 開頭）",
+			Data:    nil,
+		})
+	}
+
+	user, err := db.UpdateUser(db.Dbs, userID, req.NickName, req.Description, req.Avatar)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			slog.Warn("UpdateUserHandler not found", "id", id)
+			return c.Status(fiber.StatusNotFound).JSON(dto.TResponse[any]{
+				Message: "找不到該使用者",
+				Data:    nil,
+			})
+		}
+		slog.Error("UpdateUser", "err", err, "id", id)
+		return c.Status(fiber.StatusInternalServerError).JSON(dto.TResponse[any]{
+			Message: "更新失敗，請稍後再試",
+			Data:    nil,
+		})
+	}
+
+	auth, err := db.GetUserAuthByUserID(db.Dbs, userID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			slog.Warn("UpdateUserHandler user auth not found", "userId", userID)
+			return c.Status(fiber.StatusUnauthorized).JSON(dto.TResponse[any]{
+				Message: "找不到登入帳號資料",
+				Data:    nil,
+			})
+		}
+		slog.Error("GetUserAuthByUserID", "err", err, "userId", userID)
+		return c.Status(fiber.StatusInternalServerError).JSON(dto.TResponse[any]{
+			Message: "更新失敗，請稍後再試",
+			Data:    nil,
+		})
+	}
+
+	sessionUser := session.NewUser(user, auth.Username)
+	if !session.SetUser(c, sessionUser) {
+		slog.Error("UpdateUserHandler session not available", "userId", userID)
+		return c.Status(fiber.StatusInternalServerError).JSON(dto.TResponse[any]{
+			Message: "更新失敗，請稍後再試",
+			Data:    nil,
+		})
+	}
+
+	slog.Info("UpdateUserHandler success", "userId", userID)
+	return c.Status(fiber.StatusOK).JSON(dto.TResponse[dto.UserProfileResponse]{
+		Message: "ok",
+		Data:    toUserProfileResponse(user),
+	})
+}
+
+func validateAvatarURL(avatar string) error {
+	if avatar == "" {
+		return nil
+	}
+	if strings.HasPrefix(avatar, "http://") || strings.HasPrefix(avatar, "https://") {
+		return nil
+	}
+	return errors.New("invalid avatar url")
 }

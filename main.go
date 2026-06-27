@@ -94,7 +94,10 @@ func main() {
 	}))
 
 	app.Use(session.New(session.Config{
-		Extractor: extractors.FromCookie("session_id"),
+		Extractor:      extractors.FromCookie("session_id"),
+		CookieSameSite: "Strict",
+		CookieHTTPOnly: true,
+		CookieSecure:   true,
 	}))
 
 	// api route group

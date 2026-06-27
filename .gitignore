@@ -33,3 +33,6 @@ go.work.sum
 
 # build script
 build.bat
+
+# log
+*.log

@@ -10,7 +10,7 @@ type RegisterRequest struct {
 
 type UserResponse struct {
 	ID        int       `json:"id"`
-	Name      string    `json:"name"`
+	NickName  string    `json:"nickName"`
 	DiscordID string    `json:"discordId"`
 	Role      int       `json:"role"`
 	CreatedAt time.Time `json:"createdAt"`
@@ -19,7 +19,8 @@ type UserResponse struct {
 
 type UserProfileResponse struct {
 	ID          int       `json:"id"`
-	Name        string    `json:"name"`
+	UserName    string    `json:"userName,omitempty"`
+	NickName    string    `json:"nickName"`
 	DiscordID   string    `json:"discordId"`
 	Avatar      string    `json:"avatar"`
 	Description string    `json:"description"`
@@ -72,4 +73,10 @@ type RegisterResponse struct {
 
 type RegisterLookupResponse struct {
 	DiscordID string `json:"discordId"`
+}
+
+type UpdateUserRequest struct {
+	NickName    string `json:"nickName"`
+	Description string `json:"description"`
+	Avatar      string `json:"avatar"`
 }
