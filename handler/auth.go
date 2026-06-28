@@ -95,6 +95,22 @@ func LoginHandler(c fiber.Ctx) error {
 	})
 }
 
+func LogoutHandler(c fiber.Ctx) error {
+	if err := session.ClearUser(c); err != nil {
+		slog.Error("LogoutHandler destroy session", "err", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(dto.TResponse[any]{
+			Message: "登出失敗，請稍後再試",
+			Data:    nil,
+		})
+	}
+
+	slog.Info("LogoutHandler success")
+	return c.Status(fiber.StatusOK).JSON(dto.TResponse[any]{
+		Message: "ok",
+		Data:    nil,
+	})
+}
+
 func MeHandler(c fiber.Ctx) error {
 	user := session.LoadUser(c)
 	if user == nil {
