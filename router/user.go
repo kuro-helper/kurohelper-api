@@ -16,14 +16,6 @@ func UserRouter(apiGroup fiber.Router) {
 		return handler.GetUser(c)
 	})
 
-	userDataGroup.Get("/register-link", middlware.TokenAuth(true), func(c fiber.Ctx) error {
-		return handler.GetRegisterLinkHandler(c)
-	})
-
-	userDataGroup.Post("/register", middlware.TokenAuth(true), func(c fiber.Ctx) error {
-		return handler.RegisterUserHandler(c)
-	})
-
 	userDataGroup.Get("/:id/game", middlware.TokenAuth(false), func(c fiber.Ctx) error {
 		return handler.GetUserGameHandler(c)
 	})
