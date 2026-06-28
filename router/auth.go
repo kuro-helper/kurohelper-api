@@ -14,6 +14,14 @@ func AuthRouter(apiGroup fiber.Router) {
 		return handler.LoginHandler(c)
 	})
 
+	authGroup.Get("/register-link", middlware.TokenAuth(true), func(c fiber.Ctx) error {
+		return handler.GetRegisterLinkHandler(c)
+	})
+
+	authGroup.Post("/register", middlware.TokenAuth(true), func(c fiber.Ctx) error {
+		return handler.RegisterUserHandler(c)
+	})
+
 	authGroup.Get("/me", middlware.TokenAuth(true), func(c fiber.Ctx) error {
 		return handler.MeHandler(c)
 	})
