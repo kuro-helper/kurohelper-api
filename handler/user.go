@@ -340,6 +340,11 @@ func GetUserGameHandler(c fiber.Ctx) error {
 		})
 	}
 
+	me := session.LoadUser(c)
+	if user.PrivateGameData && (me == nil || me.ID != userID) {
+		userGames = nil
+	}
+
 	slog.Info("GetUserGameHandler success", "id", id, "count", len(userGames))
 	return c.Status(fiber.StatusOK).JSON(dto.TResponse[dto.GetUserGameResponse]{
 		Message: "ok",
@@ -403,7 +408,7 @@ func UpdateUserHandler(c fiber.Ctx) error {
 		})
 	}
 
-	user, err := db.UpdateUser(db.Dbs, userID, req.NickName, req.Description, req.Avatar)
+	user, err := db.UpdateUser(db.Dbs, userID, req.NickName, req.Description, req.Avatar, req.PrivateGameData)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			slog.Warn("UpdateUserHandler not found", "id", id)
@@ -419,27 +424,11 @@ func UpdateUserHandler(c fiber.Ctx) error {
 		})
 	}
 
-	auth, err := db.GetUserAuthByUserID(db.Dbs, userID)
+	user, err = session.RefreshUser(c, userID)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			slog.Warn("UpdateUserHandler user auth not found", "userId", userID)
-			return c.Status(fiber.StatusUnauthorized).JSON(dto.TResponse[any]{
-				Message: "找不到登入帳號資料",
-				Data:    nil,
-			})
-		}
-		slog.Error("GetUserAuthByUserID", "err", err, "userId", userID)
+		slog.Error("UpdateUserHandler refresh session", "err", err, "userId", userID)
 		return c.Status(fiber.StatusInternalServerError).JSON(dto.TResponse[any]{
-			Message: "更新失敗，請稍後再試",
-			Data:    nil,
-		})
-	}
-
-	sessionUser := session.NewUser(user, auth.Username)
-	if !session.SetUser(c, sessionUser) {
-		slog.Error("UpdateUserHandler session not available", "userId", userID)
-		return c.Status(fiber.StatusInternalServerError).JSON(dto.TResponse[any]{
-			Message: "更新失敗，請稍後再試",
+			Message: "快照更新異常，請稍後再試",
 			Data:    nil,
 		})
 	}
