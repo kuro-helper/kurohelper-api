@@ -80,3 +80,11 @@ type UpdateUserRequest struct {
 	Description string `json:"description"`
 	Avatar      string `json:"avatar"`
 }
+
+type UpdateUserGameRequest struct {
+	Status        int        `json:"status"`
+	WishListMark  bool       `json:"wishListMark"`
+	BlackListMark bool       `json:"blackListMark"`
+	StartDate     *time.Time `json:"startDate"`
+	FinishedDate  *time.Time `json:"finishedDate"`
+}
