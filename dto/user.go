@@ -37,7 +37,7 @@ type GetUserGameResponse struct {
 type UserGameResponse struct {
 	UserID        int                    `json:"userId"`
 	GameErogsID   int                    `json:"gameErogsId"`
-	Status        string                 `json:"status"`
+	Status        int                    `json:"status"`
 	WishListMark  bool                   `json:"wishListMark"`
 	BlackListMark bool                   `json:"blackListMark"`
 	StartDate     *time.Time             `json:"startDate,omitempty"`

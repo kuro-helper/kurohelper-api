@@ -244,18 +244,11 @@ func toUserProfileResponse(u db.User) dto.UserProfileResponse {
 	}
 }
 
-func userGameStatusText(status int) string {
-	if status == 1 {
-		return "finished"
-	}
-	return strconv.Itoa(status)
-}
-
 func toUserGameResponse(game db.UserGame) dto.UserGameResponse {
 	item := dto.UserGameResponse{
 		UserID:        game.UserID,
 		GameErogsID:   game.GameErogsID,
-		Status:        userGameStatusText(game.Status),
+		Status:        game.Status,
 		WishListMark:  game.WishListMark,
 		BlackListMark: game.BlackListMark,
 		StartDate:     game.StartDate,
