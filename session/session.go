@@ -34,6 +34,15 @@ func init() {
 	gob.Register(User{})
 }
 
+func ClearUser(c fiber.Ctx) error {
+	sess := fibersession.FromContext(c)
+	if sess == nil {
+		return nil
+	}
+	c.Locals(localsKey, nil)
+	return sess.Destroy()
+}
+
 func SetUser(c fiber.Ctx, user User) bool {
 	sess := fibersession.FromContext(c)
 	if sess == nil {

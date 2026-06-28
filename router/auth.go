@@ -17,4 +17,8 @@ func AuthRouter(apiGroup fiber.Router) {
 	authGroup.Get("/me", middlware.TokenAuth(true), func(c fiber.Ctx) error {
 		return handler.MeHandler(c)
 	})
+
+	authGroup.Post("/logout", middlware.TokenAuth(true), middlware.SessionAuth(), func(c fiber.Ctx) error {
+		return handler.LogoutHandler(c)
+	})
 }
