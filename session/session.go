@@ -2,6 +2,8 @@ package session
 
 import (
 	"encoding/gob"
+	"errors"
+	"strconv"
 	"time"
 
 	"github.com/gofiber/fiber/v3"
@@ -99,4 +101,23 @@ func NewUser(u db.User, userName string) User {
 		CreatedAt:   u.CreatedAt,
 		UpdatedAt:   u.UpdatedAt,
 	}
+}
+
+// RefreshUser 從資料庫重新載入使用者並覆寫 session snapshot。
+func RefreshUser(c fiber.Ctx, userID int) (db.User, error) {
+	user, err := db.GetUser(db.Dbs, strconv.Itoa(userID))
+	if err != nil {
+		return user, err
+	}
+
+	auth, err := db.GetUserAuthByUserID(db.Dbs, userID)
+	if err != nil {
+		return user, err
+	}
+
+	if !SetUser(c, NewUser(user, auth.Username)) {
+		return user, errors.New("session not available")
+	}
+
+	return user, nil
 }

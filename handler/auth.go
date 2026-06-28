@@ -104,45 +104,27 @@ func MeHandler(c fiber.Ctx) error {
 		})
 	}
 
-	auth, err := db.GetUserAuthByUserID(db.Dbs, user.ID)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			slog.Warn("MeHandler user auth not found", "userId", user.ID)
-			return c.Status(fiber.StatusUnauthorized).JSON(dto.TResponse[any]{
-				Message: "找不到登入帳號資料",
-				Data:    nil,
-			})
-		}
-		slog.Error("GetUserAuthByUserID", "err", err, "userId", user.ID)
-		return c.Status(fiber.StatusInternalServerError).JSON(dto.TResponse[any]{
-			Message: "發生錯誤，請稍後再試",
-			Data:    nil,
-		})
-	}
-
-	dbUser, err := db.GetUser(db.Dbs, strconv.Itoa(user.ID))
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			slog.Warn("MeHandler user not found", "userId", user.ID)
-			return c.Status(fiber.StatusUnauthorized).JSON(dto.TResponse[any]{
-				Message: "找不到使用者資料",
-				Data:    nil,
-			})
-		}
-		slog.Error("GetUser", "err", err, "userId", user.ID)
-		return c.Status(fiber.StatusInternalServerError).JSON(dto.TResponse[any]{
-			Message: "發生錯誤，請稍後再試",
-			Data:    nil,
-		})
-	}
-
-	meUser := toAuthUser(dbUser, auth.Username)
+	meUser := authUserFromSession(*user)
 	return c.Status(fiber.StatusOK).JSON(dto.TResponse[dto.MeResponse]{
 		Message: "ok",
 		Data: dto.MeResponse{
 			User: &meUser,
 		},
 	})
+}
+
+func authUserFromSession(user session.User) dto.AuthUser {
+	return dto.AuthUser{
+		ID:          user.ID,
+		UserName:    user.UserName,
+		NickName:    user.NickName,
+		DiscordID:   user.DiscordID,
+		Avatar:      user.Avatar,
+		Description: user.Description,
+		Role:        user.Role,
+		CreatedAt:   user.CreatedAt,
+		UpdatedAt:   user.UpdatedAt,
+	}
 }
 
 func toAuthUser(u db.User, userName string) dto.AuthUser {

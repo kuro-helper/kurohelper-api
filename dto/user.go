@@ -79,9 +79,10 @@ type RegisterLookupResponse struct {
 }
 
 type UpdateUserRequest struct {
-	NickName    string `json:"nickName"`
-	Description string `json:"description"`
-	Avatar      string `json:"avatar"`
+	NickName        string `json:"nickName"`
+	Description     string `json:"description"`
+	Avatar          string `json:"avatar"`
+	PrivateGameData bool   `json:"privateGameData"`
 }
 
 type UpdateUserGameRequest struct {
