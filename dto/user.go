@@ -9,24 +9,27 @@ type RegisterRequest struct {
 }
 
 type UserResponse struct {
-	ID        int       `json:"id"`
-	NickName  string    `json:"nickName"`
-	DiscordID string    `json:"discordId"`
-	Role      int       `json:"role"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
+	ID              int       `json:"id"`
+	NickName        string    `json:"nickName"`
+	DiscordID       string    `json:"discordId"`
+	Avatar          string    `json:"avatar"`
+	PrivateGameData bool      `json:"privateGameData"`
+	Role            int       `json:"role"`
+	CreatedAt       time.Time `json:"createdAt"`
+	UpdatedAt       time.Time `json:"updatedAt"`
 }
 
 type UserProfileResponse struct {
-	ID          int       `json:"id"`
-	UserName    string    `json:"userName,omitempty"`
-	NickName    string    `json:"nickName"`
-	DiscordID   string    `json:"discordId"`
-	Avatar      string    `json:"avatar"`
-	Description string    `json:"description"`
-	Role        int       `json:"role"`
-	CreatedAt   time.Time `json:"createdAt"`
-	UpdatedAt   time.Time `json:"updatedAt"`
+	ID              int       `json:"id"`
+	UserName        string    `json:"userName,omitempty"`
+	NickName        string    `json:"nickName"`
+	DiscordID       string    `json:"discordId"`
+	Avatar          string    `json:"avatar"`
+	Description     string    `json:"description"`
+	PrivateGameData bool      `json:"privateGameData"`
+	Role            int       `json:"role"`
+	CreatedAt       time.Time `json:"createdAt"`
+	UpdatedAt       time.Time `json:"updatedAt"`
 }
 
 type GetUserGameResponse struct {

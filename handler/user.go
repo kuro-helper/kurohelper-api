@@ -206,12 +206,14 @@ func GetUser(c fiber.Ctx) error {
 	var userReturn []dto.UserResponse
 	for _, u := range users {
 		userReturn = append(userReturn, dto.UserResponse{
-			ID:        u.ID,
-			NickName:  u.Name,
-			DiscordID: discordIDOrEmpty(u.DiscordID),
-			Role:      u.Role,
-			CreatedAt: u.CreatedAt,
-			UpdatedAt: u.UpdatedAt,
+			ID:              u.ID,
+			NickName:        u.Name,
+			DiscordID:       discordIDOrEmpty(u.DiscordID),
+			Avatar:          u.Avatar,
+			PrivateGameData: u.PrivateGameData,
+			Role:            u.Role,
+			CreatedAt:       u.CreatedAt,
+			UpdatedAt:       u.UpdatedAt,
 		})
 	}
 
@@ -232,15 +234,16 @@ func profileAuthUserName(userID int) string {
 
 func toUserProfileResponse(u db.User) dto.UserProfileResponse {
 	return dto.UserProfileResponse{
-		ID:          u.ID,
-		UserName:    profileAuthUserName(u.ID),
-		NickName:    u.Name,
-		DiscordID:   discordIDOrEmpty(u.DiscordID),
-		Avatar:      u.Avatar,
-		Description: u.Description,
-		Role:        u.Role,
-		CreatedAt:   u.CreatedAt,
-		UpdatedAt:   u.UpdatedAt,
+		ID:              u.ID,
+		UserName:        profileAuthUserName(u.ID),
+		NickName:        u.Name,
+		DiscordID:       discordIDOrEmpty(u.DiscordID),
+		Avatar:          u.Avatar,
+		Description:     u.Description,
+		PrivateGameData: u.PrivateGameData,
+		Role:            u.Role,
+		CreatedAt:       u.CreatedAt,
+		UpdatedAt:       u.UpdatedAt,
 	}
 }
 
@@ -504,7 +507,7 @@ func UpdateUserGameHandler(c fiber.Ctx) error {
 		})
 	}
 
-	if !dto.ValidUserGameStatus(req.Status) {
+	if !db.ValidUserGameStatus(req.Status) {
 		slog.Warn("UpdateUserGameHandler bad request", "reason", "invalid status", "userId", userID, "gameErogsId", gameErogsID, "status", req.Status)
 		return c.Status(fiber.StatusBadRequest).JSON(dto.TResponse[any]{
 			Message: "status 格式錯誤（需為 0 至 4）",
