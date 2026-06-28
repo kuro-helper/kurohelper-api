@@ -28,6 +28,10 @@ func UserRouter(apiGroup fiber.Router) {
 		return handler.GetUserGameHandler(c)
 	})
 
+	userDataGroup.Put("/:id/game/:gameErogsId", middlware.TokenAuth(true), middlware.SessionAuth(), func(c fiber.Ctx) error {
+		return handler.UpdateUserGameHandler(c)
+	})
+
 	userDataGroup.Put("/:id", middlware.TokenAuth(true), middlware.SessionAuth(), func(c fiber.Ctx) error {
 		return handler.UpdateUserHandler(c)
 	})

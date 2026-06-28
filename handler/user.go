@@ -244,18 +244,11 @@ func toUserProfileResponse(u db.User) dto.UserProfileResponse {
 	}
 }
 
-func userGameStatusText(status int) string {
-	if status == 1 {
-		return "finished"
-	}
-	return strconv.Itoa(status)
-}
-
 func toUserGameResponse(game db.UserGame) dto.UserGameResponse {
 	item := dto.UserGameResponse{
 		UserID:        game.UserID,
 		GameErogsID:   game.GameErogsID,
-		Status:        userGameStatusText(game.Status),
+		Status:        game.Status,
 		WishListMark:  game.WishListMark,
 		BlackListMark: game.BlackListMark,
 		StartDate:     game.StartDate,
@@ -463,4 +456,97 @@ func validateAvatarURL(avatar string) error {
 		return nil
 	}
 	return errors.New("invalid avatar url")
+}
+
+func UpdateUserGameHandler(c fiber.Ctx) error {
+	me := session.LoadUser(c)
+	if me == nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(dto.TResponse[any]{
+			Message: "未登入",
+			Data:    nil,
+		})
+	}
+
+	id := strings.TrimSpace(c.Params("id"))
+	userID, err := strconv.Atoi(id)
+	if err != nil || userID <= 0 {
+		slog.Warn("UpdateUserGameHandler bad request", "reason", "invalid id", "id", id)
+		return c.Status(fiber.StatusBadRequest).JSON(dto.TResponse[any]{
+			Message: "id 格式錯誤",
+			Data:    nil,
+		})
+	}
+
+	if me.ID != userID {
+		slog.Warn("UpdateUserGameHandler forbidden", "sessionUserId", me.ID, "targetId", userID)
+		return c.Status(fiber.StatusForbidden).JSON(dto.TResponse[any]{
+			Message: "無法修改他人的遊玩資料",
+			Data:    nil,
+		})
+	}
+
+	gameErogsIDParam := strings.TrimSpace(c.Params("gameErogsId"))
+	gameErogsID, err := strconv.Atoi(gameErogsIDParam)
+	if err != nil || gameErogsID <= 0 {
+		slog.Warn("UpdateUserGameHandler bad request", "reason", "invalid gameErogsId", "gameErogsId", gameErogsIDParam)
+		return c.Status(fiber.StatusBadRequest).JSON(dto.TResponse[any]{
+			Message: "gameErogsId 格式錯誤",
+			Data:    nil,
+		})
+	}
+
+	var req dto.UpdateUserGameRequest
+	if err := c.Bind().Body(&req); err != nil {
+		slog.Warn("UpdateUserGameHandler bad request", "reason", "bind body", "err", err)
+		return c.Status(fiber.StatusBadRequest).JSON(dto.TResponse[any]{
+			Message: "請求格式錯誤",
+			Data:    nil,
+		})
+	}
+
+	if !dto.ValidUserGameStatus(req.Status) {
+		slog.Warn("UpdateUserGameHandler bad request", "reason", "invalid status", "userId", userID, "gameErogsId", gameErogsID, "status", req.Status)
+		return c.Status(fiber.StatusBadRequest).JSON(dto.TResponse[any]{
+			Message: "status 格式錯誤（需為 0 至 4）",
+			Data:    nil,
+		})
+	}
+
+	if req.StartDate != nil && req.FinishedDate != nil && req.StartDate.After(*req.FinishedDate) {
+		slog.Warn("UpdateUserGameHandler bad request", "reason", "startDate after finishedDate", "userId", userID, "gameErogsId", gameErogsID)
+		return c.Status(fiber.StatusBadRequest).JSON(dto.TResponse[any]{
+			Message: "開始時間不能超過結束時間",
+			Data:    nil,
+		})
+	}
+
+	if err := db.UpdateUserGame(db.Dbs, userID, gameErogsID, req.Status, req.WishListMark, req.BlackListMark, req.StartDate, req.FinishedDate); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			slog.Warn("UpdateUserGameHandler not found", "userId", userID, "gameErogsId", gameErogsID)
+			return c.Status(fiber.StatusNotFound).JSON(dto.TResponse[any]{
+				Message: "找不到該遊玩資料",
+				Data:    nil,
+			})
+		}
+		slog.Error("UpdateUserGame", "err", err, "userId", userID, "gameErogsId", gameErogsID)
+		return c.Status(fiber.StatusInternalServerError).JSON(dto.TResponse[any]{
+			Message: "更新失敗，請稍後再試",
+			Data:    nil,
+		})
+	}
+
+	game, err := db.GetUserGameByUserAndGameErogsID(db.Dbs, userID, gameErogsID)
+	if err != nil {
+		slog.Error("GetUserGameByUserAndGameErogsID", "err", err, "userId", userID, "gameErogsId", gameErogsID)
+		return c.Status(fiber.StatusInternalServerError).JSON(dto.TResponse[any]{
+			Message: "更新失敗，請稍後再試",
+			Data:    nil,
+		})
+	}
+
+	slog.Info("UpdateUserGameHandler success", "userId", userID, "gameErogsId", gameErogsID)
+	return c.Status(fiber.StatusOK).JSON(dto.TResponse[dto.UserGameResponse]{
+		Message: "ok",
+		Data:    toUserGameResponse(game),
+	})
 }
