@@ -92,3 +92,12 @@ type UpdateUserGameRequest struct {
 	StartDate     *time.Time `json:"startDate"`
 	FinishedDate  *time.Time `json:"finishedDate"`
 }
+
+type CreateUserGameRequest struct {
+	GameErogsID   int        `json:"gameErogsId"`
+	Status        int        `json:"status"`
+	WishListMark  bool       `json:"wishListMark"`
+	BlackListMark bool       `json:"blackListMark"`
+	StartDate     *time.Time `json:"startDate"`
+	FinishedDate  *time.Time `json:"finishedDate"`
+}
