@@ -254,7 +254,7 @@ func toUserGameResponse(game db.UserGame) dto.UserGameResponse {
 	item := dto.UserGameResponse{
 		UserID:        game.UserID,
 		GameErogsID:   game.GameErogsID,
-		Status:        game.Status,
+		Status:        int(game.Status),
 		WishListMark:  game.WishListMark,
 		BlackListMark: game.BlackListMark,
 		StartDate:     game.StartDate,
@@ -499,7 +499,8 @@ func UpdateUserGameHandler(c fiber.Ctx) error {
 		})
 	}
 
-	if !db.ValidUserGameStatus(req.Status) {
+	status := db.UserGameStatus(req.Status)
+	if !db.ValidUserGameStatus(status) {
 		slog.Warn("UpdateUserGameHandler bad request", "reason", "invalid status", "userId", userID, "gameErogsId", gameErogsID, "status", req.Status)
 		return c.Status(fiber.StatusBadRequest).JSON(dto.TResponse[any]{
 			Message: "status 格式錯誤（需為 0 至 4）",
@@ -515,7 +516,7 @@ func UpdateUserGameHandler(c fiber.Ctx) error {
 		})
 	}
 
-	if err := db.UpdateUserGame(db.Dbs, userID, gameErogsID, req.Status, req.WishListMark, req.BlackListMark, req.StartDate, req.FinishedDate); err != nil {
+	if err := db.UpdateUserGame(db.Dbs, userID, gameErogsID, status, req.WishListMark, req.BlackListMark, req.StartDate, req.FinishedDate); err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			slog.Warn("UpdateUserGameHandler not found", "userId", userID, "gameErogsId", gameErogsID)
 			return c.Status(fiber.StatusNotFound).JSON(dto.TResponse[any]{
@@ -590,7 +591,8 @@ func CreateUserGameHandler(c fiber.Ctx) error {
 		})
 	}
 
-	if !db.ValidUserGameStatus(req.Status) {
+	status := db.UserGameStatus(req.Status)
+	if !db.ValidUserGameStatus(status) {
 		slog.Warn("CreateUserGameHandler bad request", "reason", "invalid status", "userId", userID, "gameErogsId", req.GameErogsID, "status", req.Status)
 		return c.Status(fiber.StatusBadRequest).JSON(dto.TResponse[any]{
 			Message: "status 格式錯誤（需為 0 至 4）",
@@ -606,7 +608,7 @@ func CreateUserGameHandler(c fiber.Ctx) error {
 		})
 	}
 
-	if err := db.CreateUserGame(db.Dbs, userID, req.GameErogsID, req.Status, req.WishListMark, req.BlackListMark, req.StartDate, req.FinishedDate); err != nil {
+	if err := db.CreateUserGame(db.Dbs, userID, req.GameErogsID, status, req.WishListMark, req.BlackListMark, req.StartDate, req.FinishedDate); err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			slog.Warn("CreateUserGameHandler not found", "userId", userID, "gameErogsId", req.GameErogsID)
 			return c.Status(fiber.StatusNotFound).JSON(dto.TResponse[any]{
