@@ -77,8 +77,11 @@ func main() {
 		DBPort:     os.Getenv("DB_PORT"),
 	}
 
-	kurohelperdb.InitDsn(config)
-	// kurohelperdb.Migration(kurohelperdb.Dbs) // 選填
+	err := kurohelperdb.InitDsn(config)
+	if err != nil {
+		slog.Error(err.Error())
+		os.Exit(1)
+	}
 
 	initTokenCache()
 
@@ -109,6 +112,7 @@ func main() {
 	// routes.TokenRouter(apiGroup)
 	router.UserRouter(apiGroup)
 	router.AuthRouter(apiGroup)
+	router.AnnouncementRouter(apiGroup)
 
 	addr := fmt.Sprintf("127.0.0.1:%s", os.Getenv("PRODUCTION_PORT"))
 	slog.Info("fiber open...")
