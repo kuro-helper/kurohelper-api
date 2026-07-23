@@ -645,3 +645,62 @@ func CreateUserGameHandler(c fiber.Ctx) error {
 		Data:    toUserGameResponse(game),
 	})
 }
+
+func DeleteUserGameHandler(c fiber.Ctx) error {
+	me := session.LoadUser(c)
+	if me == nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(dto.TResponse[any]{
+			Message: "未登入",
+			Data:    nil,
+		})
+	}
+
+	id := strings.TrimSpace(c.Params("id"))
+	userID, err := strconv.Atoi(id)
+	if err != nil || userID <= 0 {
+		slog.Warn("DeleteUserGameHandler bad request", "reason", "invalid id", "id", id)
+		return c.Status(fiber.StatusBadRequest).JSON(dto.TResponse[any]{
+			Message: "id 格式錯誤",
+			Data:    nil,
+		})
+	}
+
+	if me.ID != userID {
+		slog.Warn("DeleteUserGameHandler forbidden", "sessionUserId", me.ID, "targetId", userID)
+		return c.Status(fiber.StatusForbidden).JSON(dto.TResponse[any]{
+			Message: "無法刪除他人的遊玩資料",
+			Data:    nil,
+		})
+	}
+
+	gameErogsIDParam := strings.TrimSpace(c.Params("gameErogsId"))
+	gameErogsID, err := strconv.Atoi(gameErogsIDParam)
+	if err != nil || gameErogsID <= 0 {
+		slog.Warn("DeleteUserGameHandler bad request", "reason", "invalid gameErogsId", "gameErogsId", gameErogsIDParam)
+		return c.Status(fiber.StatusBadRequest).JSON(dto.TResponse[any]{
+			Message: "gameErogsId 格式錯誤",
+			Data:    nil,
+		})
+	}
+
+	if err := db.DeleteUserGameByUserAndGameErogsID(db.Dbs, userID, gameErogsID); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			slog.Warn("DeleteUserGameHandler not found", "userId", userID, "gameErogsId", gameErogsID)
+			return c.Status(fiber.StatusNotFound).JSON(dto.TResponse[any]{
+				Message: "找不到該遊玩資料",
+				Data:    nil,
+			})
+		}
+		slog.Error("DeleteUserGameByUserAndGameErogsID", "err", err, "userId", userID, "gameErogsId", gameErogsID)
+		return c.Status(fiber.StatusInternalServerError).JSON(dto.TResponse[any]{
+			Message: "刪除失敗，請稍後再試",
+			Data:    nil,
+		})
+	}
+
+	slog.Info("DeleteUserGameHandler success", "userId", userID, "gameErogsId", gameErogsID)
+	return c.Status(fiber.StatusOK).JSON(dto.TResponse[any]{
+		Message: "ok",
+		Data:    nil,
+	})
+}
