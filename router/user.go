@@ -28,6 +28,10 @@ func UserRouter(apiGroup fiber.Router) {
 		return handler.UpdateUserGameHandler(c)
 	})
 
+	userDataGroup.Delete("/:id/game/:gameErogsId", middlware.TokenAuth(true), middlware.SessionAuth(), func(c fiber.Ctx) error {
+		return handler.DeleteUserGameHandler(c)
+	})
+
 	userDataGroup.Put("/:id", middlware.TokenAuth(true), middlware.SessionAuth(), func(c fiber.Ctx) error {
 		return handler.UpdateUserHandler(c)
 	})
