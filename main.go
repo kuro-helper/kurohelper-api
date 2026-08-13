@@ -71,6 +71,7 @@ func init() {
 
 func main() {
 	config := kurohelperdb.Config{
+		DBHost:     os.Getenv("DB_HOST"),
 		DBOwner:    os.Getenv("DB_OWNER"),
 		DBPassword: os.Getenv("DB_PASSWORD"),
 		DBName:     os.Getenv("DB_NAME"),
