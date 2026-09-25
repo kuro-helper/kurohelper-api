@@ -114,6 +114,7 @@ func main() {
 	router.UserRouter(apiGroup)
 	router.AuthRouter(apiGroup)
 	router.AnnouncementRouter(apiGroup)
+	router.ErogsRouter(apiGroup)
 
 	addr := fmt.Sprintf("127.0.0.1:%s", os.Getenv("PRODUCTION_PORT"))
 	slog.Info("fiber open...")
