@@ -18,4 +18,8 @@ func ErogsRouter(apiGroup fiber.Router) {
 	group.Get("/game/", middlware.TokenAuth(false), func(c fiber.Ctx) error {
 		return handler.GetErogsGame(c)
 	})
+
+	group.Get("/game/:id", middlware.TokenAuth(false), func(c fiber.Ctx) error {
+		return handler.GetErogsGameByID(c)
+	})
 }
