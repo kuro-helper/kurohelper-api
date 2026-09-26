@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -19,6 +20,7 @@ import (
 	slogmulti "github.com/samber/slog-multi"
 
 	kurohelperdb "kurohelperservice/db"
+	"kurohelperservice/provider/erogs"
 )
 
 func init() {
@@ -84,6 +86,8 @@ func main() {
 		os.Exit(1)
 	}
 
+	erogs.InitRateLimit(time.Duration(envInt("EROGS_RATE_LIMIT_RESET_TIME", 10)))
+
 	initTokenCache()
 
 	allowOrigins := parseAllowOrigins(os.Getenv("ALLOW_CORS"))
@@ -114,6 +118,7 @@ func main() {
 	router.UserRouter(apiGroup)
 	router.AuthRouter(apiGroup)
 	router.AnnouncementRouter(apiGroup)
+	router.ErogsRouter(apiGroup)
 
 	addr := fmt.Sprintf("127.0.0.1:%s", os.Getenv("PRODUCTION_PORT"))
 	slog.Info("fiber open...")
@@ -148,4 +153,16 @@ func initTokenCache() {
 	for _, t := range webAPIToken {
 		middlware.VaildToken[t.ID] = t
 	}
+}
+
+func envInt(key string, def int) int {
+	raw := strings.TrimSpace(os.Getenv(key))
+	if raw == "" {
+		return def
+	}
+	v, err := strconv.Atoi(raw)
+	if err != nil {
+		return def
+	}
+	return v
 }
