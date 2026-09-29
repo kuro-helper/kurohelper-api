@@ -66,14 +66,16 @@ func GetErogsGame(c fiber.Ctx) error {
 
 	out := make([]dto.GameErogsResponse, 0, len(games))
 	for _, g := range games {
+		image, imageFromGame := resolveErogsDisplayImage(g.Image, g.GameImageURL)
 		out = append(out, dto.GameErogsResponse{
-			ID:           g.ID,
-			BrandErogsID: g.BrandErogsID,
-			Name:         g.Name,
-			Image:        g.Image,
-			Category:     g.Category,
-			CreatedAt:    g.CreatedAt,
-			UpdatedAt:    g.UpdatedAt,
+			ID:            g.ID,
+			BrandErogsID:  g.BrandErogsID,
+			Name:          g.Name,
+			Image:         image,
+			ImageFromGame: imageFromGame,
+			Category:      g.Category,
+			CreatedAt:     g.CreatedAt,
+			UpdatedAt:     g.UpdatedAt,
 		})
 	}
 

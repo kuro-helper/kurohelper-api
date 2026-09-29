@@ -51,13 +51,14 @@ type UserGameResponse struct {
 }
 
 type UserGameErogsResponse struct {
-	ID           int                         `json:"id"`
-	BrandErogsID int                         `json:"brandErogsId"`
-	Name         string                      `json:"name"`
-	Image        string                      `json:"image"`
-	CreatedAt    time.Time                   `json:"createdAt"`
-	UpdatedAt    time.Time                   `json:"updatedAt"`
-	BrandErogs   *UserGameBrandErogsResponse `json:"brandErogs,omitempty"`
+	ID            int                         `json:"id"`
+	BrandErogsID  int                         `json:"brandErogsId"`
+	Name          string                      `json:"name"`
+	Image         string                      `json:"image"`
+	ImageFromGame bool                        `json:"imageFromGame"` // true：顯示圖來自 games（含 erogs 無圖時）
+	CreatedAt     time.Time                   `json:"createdAt"`
+	UpdatedAt     time.Time                   `json:"updatedAt"`
+	BrandErogs    *UserGameBrandErogsResponse `json:"brandErogs,omitempty"`
 }
 
 type UserGameBrandErogsResponse struct {
