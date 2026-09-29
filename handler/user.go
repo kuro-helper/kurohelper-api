@@ -271,10 +271,13 @@ func toUserGameResponse(game db.UserGame) dto.UserGameResponse {
 		ID:           game.GameErogs.ID,
 		BrandErogsID: game.GameErogs.BrandErogsID,
 		Name:         game.GameErogs.Name,
-		Image:        game.GameErogs.Image,
 		CreatedAt:    game.GameErogs.CreatedAt,
 		UpdatedAt:    game.GameErogs.UpdatedAt,
 	}
+	gameErogs.Image, gameErogs.ImageFromGame = resolveErogsDisplayImage(
+		game.GameErogs.Image,
+		game.GameErogs.GameImageURL,
+	)
 
 	if game.GameErogs.BrandErogs != nil {
 		brand := game.GameErogs.BrandErogs
