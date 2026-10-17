@@ -50,6 +50,15 @@ type UserGameResponse struct {
 	GameErogs     *UserGameErogsResponse `json:"gameErogs,omitempty"`
 }
 
+type FinishedUserGameResponse struct {
+	UserID       int                    `json:"userId"`
+	NickName     string                 `json:"nickName,omitempty"`
+	GameErogsID  int                    `json:"gameErogsId"`
+	StartDate    *time.Time             `json:"startDate,omitempty"`
+	FinishedDate *time.Time             `json:"finishedDate,omitempty"`
+	GameErogs    *UserGameErogsResponse `json:"gameErogs,omitempty"`
+}
+
 type UserGameErogsResponse struct {
 	ID            int                         `json:"id"`
 	BrandErogsID  int                         `json:"brandErogsId"`

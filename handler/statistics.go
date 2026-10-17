@@ -33,17 +33,41 @@ func GetFinishedUserGamesHandler(c fiber.Ctx) error {
 		privateIDs[user.ID] = struct{}{}
 	}
 
-	filtered := make([]db.UserGame, 0, len(games))
+	const finishedLimit = 20
+	filtered := make([]db.UserGame, 0, finishedLimit)
 	for _, game := range games {
 		if _, hidden := privateIDs[game.UserID]; hidden {
 			continue
 		}
 		filtered = append(filtered, game)
+		if len(filtered) == finishedLimit {
+			break
+		}
 	}
 
 	slog.Info("GetFinishedUserGamesHandler success", "count", len(filtered))
-	return c.Status(fiber.StatusOK).JSON(dto.TResponse[[]dto.UserGameResponse]{
+	return c.Status(fiber.StatusOK).JSON(dto.TResponse[[]dto.FinishedUserGameResponse]{
 		Message: "ok",
-		Data:    toUserGamesResponse(filtered),
+		Data:    toFinishedUserGamesResponse(filtered),
 	})
+}
+
+func toFinishedUserGamesResponse(games []db.UserGame) []dto.FinishedUserGameResponse {
+	full := toUserGamesResponse(games)
+	resp := make([]dto.FinishedUserGameResponse, 0, len(full))
+	for i, item := range full {
+		nickName := ""
+		if games[i].User != nil {
+			nickName = games[i].User.Name
+		}
+		resp = append(resp, dto.FinishedUserGameResponse{
+			UserID:       item.UserID,
+			NickName:     nickName,
+			GameErogsID:  item.GameErogsID,
+			StartDate:    item.StartDate,
+			FinishedDate: item.FinishedDate,
+			GameErogs:    item.GameErogs,
+		})
+	}
+	return resp
 }
