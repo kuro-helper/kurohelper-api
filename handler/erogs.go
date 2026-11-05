@@ -46,18 +46,54 @@ func GetErogsBrand(c fiber.Ctx) error {
 
 func GetErogsGame(c fiber.Ctx) error {
 	brandIDText := strings.TrimSpace(c.Query("brandid"))
-	brandID, err := strconv.Atoi(brandIDText)
-	if err != nil || brandID <= 0 {
-		slog.Warn("GetErogsGame bad request", "reason", "invalid brandid", "brandid", brandIDText)
+	keyword := strings.TrimSpace(c.Query("q"))
+	if (brandIDText == "") == (keyword == "") {
 		return c.Status(fiber.StatusBadRequest).JSON(dto.TResponse[any]{
-			Message: "brandid 必須是大於 0 的整數",
+			Message: "請提供 brandid 或 q，且不可同時提供",
 			Data:    nil,
 		})
 	}
 
-	games, err := db.GetGameErogsByBrandID(db.Dbs, brandID)
+	var games []db.GameErogs
+	var err error
+	if brandIDText != "" {
+		brandID, parseErr := strconv.Atoi(brandIDText)
+		if parseErr != nil || brandID <= 0 {
+			slog.Warn("GetErogsGame bad request", "reason", "invalid brandid", "brandid", brandIDText)
+			return c.Status(fiber.StatusBadRequest).JSON(dto.TResponse[any]{
+				Message: "brandid 必須是大於 0 的整數",
+				Data:    nil,
+			})
+		}
+		games, err = db.GetGameErogsByBrandID(db.Dbs, brandID)
+	} else {
+		const defaultLimit = 50
+		const maxLimit = 100
+		limit := defaultLimit
+		if limitText := strings.TrimSpace(c.Query("limit")); limitText != "" {
+			parsedLimit, parseErr := strconv.Atoi(limitText)
+			if parseErr != nil || parsedLimit <= 0 {
+				return c.Status(fiber.StatusBadRequest).JSON(dto.TResponse[any]{
+					Message: "limit 必須是大於 0 的整數",
+					Data:    nil,
+				})
+			}
+			limit = parsedLimit
+		}
+		if limit > maxLimit {
+			limit = maxLimit
+		}
+
+		escapedKeyword := strings.NewReplacer(
+			`\`, `\\`,
+			`%`, `\%`,
+			`_`, `\_`,
+		).Replace(keyword)
+		games, err = db.SearchGameErogsByName(db.Dbs, "%"+escapedKeyword+"%", limit)
+	}
+
 	if err != nil {
-		slog.Error("GetErogsGame", "err", err, "brandid", brandID)
+		slog.Error("GetErogsGame", "err", err, "brandid", brandIDText, "q", keyword)
 		return c.Status(fiber.StatusInternalServerError).JSON(dto.TResponse[any]{
 			Message: "發生錯誤，請稍後再試",
 			Data:    nil,
@@ -79,7 +115,7 @@ func GetErogsGame(c fiber.Ctx) error {
 		})
 	}
 
-	slog.Info("GetErogsGame success", "brandid", brandID, "count", len(out))
+	slog.Info("GetErogsGame success", "brandid", brandIDText, "q", keyword, "count", len(out))
 	return c.Status(fiber.StatusOK).JSON(dto.TResponse[[]dto.GameErogsResponse]{
 		Message: "ok",
 		Data:    out,
