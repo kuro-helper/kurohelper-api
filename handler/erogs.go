@@ -16,7 +16,30 @@ import (
 )
 
 func GetErogsBrand(c fiber.Ctx) error {
-	brands, err := db.GetAllBrandErogs(db.Dbs)
+	keyword := strings.TrimSpace(c.Query("q"))
+	var brands []db.BrandErogs
+	var err error
+	if keyword != "" {
+		const defaultLimit = 50
+		const maxLimit = 100
+		limit := defaultLimit
+		if limitText := strings.TrimSpace(c.Query("limit")); limitText != "" {
+			parsedLimit, parseErr := strconv.Atoi(limitText)
+			if parseErr != nil || parsedLimit <= 0 {
+				return c.Status(fiber.StatusBadRequest).JSON(dto.TResponse[any]{
+					Message: "limit 必須是大於 0 的整數",
+					Data:    nil,
+				})
+			}
+			limit = parsedLimit
+		}
+		if limit > maxLimit {
+			limit = maxLimit
+		}
+		brands, err = db.SearchBrandErogsByName(db.Dbs, "%"+escapeLikePattern(keyword)+"%", limit)
+	} else {
+		brands, err = db.GetAllBrandErogs(db.Dbs)
+	}
 	if err != nil {
 		slog.Error("GetErogsBrand", "err", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(dto.TResponse[any]{
@@ -84,12 +107,7 @@ func GetErogsGame(c fiber.Ctx) error {
 			limit = maxLimit
 		}
 
-		escapedKeyword := strings.NewReplacer(
-			`\`, `\\`,
-			`%`, `\%`,
-			`_`, `\_`,
-		).Replace(keyword)
-		games, err = db.SearchGameErogsByName(db.Dbs, "%"+escapedKeyword+"%", limit)
+		games, err = db.SearchGameErogsByName(db.Dbs, "%"+escapeLikePattern(keyword)+"%", limit)
 	}
 
 	if err != nil {
@@ -214,4 +232,12 @@ func GetErogsGameByID(c fiber.Ctx) error {
 			Creators:                         creators,
 		},
 	})
+}
+
+func escapeLikePattern(keyword string) string {
+	return strings.NewReplacer(
+		`\`, `\\`,
+		`%`, `\%`,
+		`_`, `\_`,
+	).Replace(keyword)
 }
