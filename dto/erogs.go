@@ -37,6 +37,7 @@ type ErogsOfficialGameResponse struct {
 	SellDay                          string                             `json:"sellDay"`
 	Model                            string                             `json:"model"`
 	DMM                              string                             `json:"dmm"`
+	Image                            string                             `json:"image"`
 	Median                           string                             `json:"median"`
 	TokutenCount                     string                             `json:"tokutenCount"`
 	TotalPlayTimeMedian              string                             `json:"totalPlayTimeMedian"`

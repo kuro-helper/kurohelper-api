@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/gofiber/fiber/v3"
+	"gorm.io/gorm"
 
 	kurohelperservice "kurohelperservice"
 	"kurohelperservice/db"
@@ -197,6 +198,20 @@ func GetErogsGameByID(c fiber.Ctx) error {
 		slog.Info("GetErogsGameByID cache hit", "id", id)
 	}
 
+	image := ""
+	if dmm := strings.TrimSpace(game.DMM); dmm != "" {
+		image = erogs.MakeDMMImageURL(dmm)
+	} else {
+		fallbackGame, err := db.GetGameByErogsID(db.Dbs, game.ID)
+		if err != nil {
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
+				slog.Warn("GetErogsGameByID fallback image", "id", game.ID, "err", err)
+			}
+		} else {
+			image = strings.TrimSpace(fallbackGame.ImageURL)
+		}
+	}
+
 	creators := make([]dto.ErogsOfficialGameCreatorResponse, 0, len(game.CreatorShubetu))
 	for _, item := range game.CreatorShubetu {
 		creators = append(creators, dto.ErogsOfficialGameCreatorResponse{
@@ -218,6 +233,7 @@ func GetErogsGameByID(c fiber.Ctx) error {
 			SellDay:                          game.SellDay,
 			Model:                            game.Model,
 			DMM:                              game.DMM,
+			Image:                            image,
 			Median:                           game.Median,
 			TokutenCount:                     game.TokutenCount,
 			TotalPlayTimeMedian:              game.TotalPlayTimeMedian,
