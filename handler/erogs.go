@@ -152,6 +152,7 @@ func GetErogsGameByID(c fiber.Ctx) error {
 	}
 
 	cacheKey := strconv.Itoa(id)
+	cache.ErogsGameStore.Clean()
 	game, err := cache.ErogsGameStore.Get(cacheKey)
 	if err != nil {
 		if !errors.Is(err, kurohelperservice.ErrCacheLost) {
