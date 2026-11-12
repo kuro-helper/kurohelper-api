@@ -118,6 +118,7 @@ func main() {
 	router.UserRouter(apiGroup)
 	router.AuthRouter(apiGroup)
 	router.AnnouncementRouter(apiGroup)
+	router.ArticleRouter(apiGroup)
 	router.ErogsRouter(apiGroup)
 	router.StatisticsRouter(apiGroup)
 	router.KurohelperRouter(apiGroup)
