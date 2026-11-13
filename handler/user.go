@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/gofiber/fiber/v3"
 	"golang.org/x/crypto/bcrypt"
@@ -257,6 +258,8 @@ func toUserGameResponse(game db.UserGame) dto.UserGameResponse {
 		Status:        int(game.Status),
 		WishListMark:  game.WishListMark,
 		BlackListMark: game.BlackListMark,
+		Rating:        game.Rating,
+		Comment:       game.Comment,
 		StartDate:     game.StartDate,
 		FinishedDate:  game.FinishedDate,
 		CreatedAt:     game.CreatedAt,
@@ -519,7 +522,13 @@ func UpdateUserGameHandler(c fiber.Ctx) error {
 		})
 	}
 
-	if err := db.UpdateUserGame(db.Dbs, userID, gameErogsID, status, req.WishListMark, req.BlackListMark, req.StartDate, req.FinishedDate); err != nil {
+	if utf8.RuneCountInString(req.Comment) > 100 {
+		return c.Status(fiber.StatusBadRequest).JSON(dto.TResponse[any]{Message: "簡短評論最多 100 個字元", Data: nil})
+	}
+	if err := db.UpdateUserGame(db.Dbs, userID, gameErogsID, status, req.WishListMark, req.BlackListMark, req.StartDate, req.FinishedDate, req.Rating, req.Comment); err != nil {
+		if errors.Is(err, db.ErrInvalidRating) {
+			return c.Status(fiber.StatusBadRequest).JSON(dto.TResponse[any]{Message: db.ErrInvalidRating.Error(), Data: nil})
+		}
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			slog.Warn("UpdateUserGameHandler not found", "userId", userID, "gameErogsId", gameErogsID)
 			return c.Status(fiber.StatusNotFound).JSON(dto.TResponse[any]{
@@ -611,7 +620,13 @@ func CreateUserGameHandler(c fiber.Ctx) error {
 		})
 	}
 
-	if err := db.CreateUserGame(db.Dbs, userID, req.GameErogsID, status, req.WishListMark, req.BlackListMark, req.StartDate, req.FinishedDate); err != nil {
+	if utf8.RuneCountInString(req.Comment) > 100 {
+		return c.Status(fiber.StatusBadRequest).JSON(dto.TResponse[any]{Message: "簡短評論最多 100 個字元", Data: nil})
+	}
+	if err := db.CreateUserGame(db.Dbs, userID, req.GameErogsID, status, req.WishListMark, req.BlackListMark, req.StartDate, req.FinishedDate, req.Rating, req.Comment); err != nil {
+		if errors.Is(err, db.ErrInvalidRating) {
+			return c.Status(fiber.StatusBadRequest).JSON(dto.TResponse[any]{Message: db.ErrInvalidRating.Error(), Data: nil})
+		}
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			slog.Warn("CreateUserGameHandler not found", "userId", userID, "gameErogsId", req.GameErogsID)
 			return c.Status(fiber.StatusNotFound).JSON(dto.TResponse[any]{

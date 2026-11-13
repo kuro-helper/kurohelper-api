@@ -33,8 +33,8 @@ type UserProfileResponse struct {
 }
 
 type GetUserGameResponse struct {
-	User  UserProfileResponse  `json:"user"`
-	Games []UserGameResponse   `json:"games"`
+	User  UserProfileResponse `json:"user"`
+	Games []UserGameResponse  `json:"games"`
 }
 
 type UserGameResponse struct {
@@ -43,6 +43,8 @@ type UserGameResponse struct {
 	Status        int                    `json:"status"`
 	WishListMark  bool                   `json:"wishListMark"`
 	BlackListMark bool                   `json:"blackListMark"`
+	Rating        *float64               `json:"rating"`
+	Comment       string                 `json:"comment"`
 	StartDate     *time.Time             `json:"startDate,omitempty"`
 	FinishedDate  *time.Time             `json:"finishedDate,omitempty"`
 	CreatedAt     time.Time              `json:"createdAt"`
@@ -101,6 +103,8 @@ type UpdateUserGameRequest struct {
 	BlackListMark bool       `json:"blackListMark"`
 	StartDate     *time.Time `json:"startDate"`
 	FinishedDate  *time.Time `json:"finishedDate"`
+	Rating        *float64   `json:"rating"`
+	Comment       string     `json:"comment"`
 }
 
 type CreateUserGameRequest struct {
@@ -110,4 +114,6 @@ type CreateUserGameRequest struct {
 	BlackListMark bool       `json:"blackListMark"`
 	StartDate     *time.Time `json:"startDate"`
 	FinishedDate  *time.Time `json:"finishedDate"`
+	Rating        *float64   `json:"rating"`
+	Comment       string     `json:"comment"`
 }
